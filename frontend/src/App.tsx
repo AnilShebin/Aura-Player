@@ -5,8 +5,17 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { LyricsDrawer } from '@/components/lyrics/LyricsDrawer'
 import { QueueDrawer } from '@/components/player-bar/audio/QueueDrawer'
 import { Button } from '@/components/ui/button'
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { PanelLeft } from 'lucide-react'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { Window } from '@wailsio/runtime'
 import { TitleBar } from '@/components/window-controls/TitleBar'
 
@@ -61,7 +70,11 @@ function App() {
     showQueue,
     setShowQueue,
     playQueue,
-    playSongDirect
+    playSongDirect,
+    currentTab,
+    selectedAlbum,
+    selectedPlaylist,
+    setCurrentTab
   } = useMusicStore()
 
   const [isAppFullscreen, setIsAppFullscreen] = useState(!!document.fullscreenElement)
@@ -83,6 +96,33 @@ function App() {
   const toggleMaximize = () => {
     Window.ToggleMaximise()
   }
+
+  const getBreadcrumbs = () => {
+    switch (currentTab) {
+      case 'listen-now':
+        return { parent: 'Library', child: 'Listen Now' }
+      case 'favorites':
+        return { parent: 'Library', child: 'Favorites' }
+      case 'albums':
+        return { parent: 'Library', child: 'Albums' }
+      case 'album-detail':
+        return { parent: 'Albums', child: selectedAlbum?.title || 'Album Detail' }
+      case 'playlist-detail':
+        return { parent: 'Playlists', child: selectedPlaylist?.name || 'Playlist Detail' }
+      case 'songs':
+        return { parent: 'Library', child: 'Songs' }
+      case 'folders':
+        return { parent: 'Library', child: 'Folders' }
+      case 'search':
+        return { parent: 'Search', child: 'Catalog Search' }
+      case 'settings':
+        return { parent: 'Aura Music', child: 'Settings' }
+      default:
+        return { parent: 'Library', child: 'Listen Now' }
+    }
+  }
+
+  const { parent: breadcrumbParent, child: breadcrumbChild } = getBreadcrumbs()
 
   // Listen to fullscreen change events
   useEffect(() => {
@@ -130,12 +170,34 @@ function App() {
         <div className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
 
           {/* Header Title Bar Area (Draggable) */}
-          <header className={`w-full h-10 shrink-0 flex items-center justify-between px-6 z-30 relative wails-drag select-none transition-[padding-left] duration-200 ease-linear ${
-            sidebarCollapsed ? 'pl-6' : 'pl-[194px]'
+          <header className={`w-full h-14 shrink-0 flex items-start pt-4 justify-between px-6 z-30 relative wails-drag select-none transition-[padding-left] duration-200 ease-linear ${
+            sidebarCollapsed ? 'pl-[32px]' : 'pl-[188px]'
           }`}>
             {/* Left side actions (No Drag) */}
-            <div className="wails-no-drag flex items-center gap-2">
-              <SidebarTrigger className="h-8 w-8 rounded-lg border border-border/20 hover:bg-secondary/50 text-muted-foreground hover:text-foreground shadow-sm transition-colors cursor-pointer pointer-events-auto" />
+            <div className="wails-no-drag flex items-center h-8">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="h-8 w-8 rounded-lg border border-border/20 hover:bg-secondary/50 text-muted-foreground hover:text-foreground shadow-sm transition-colors cursor-pointer pointer-events-auto flex items-center justify-center focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:outline-none active:ring-0"
+                title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              >
+                <PanelLeft className="w-4 h-4" />
+              </button>
+              <div className="mx-3.5 w-px h-4 bg-border/40 shrink-0" />
+              <Breadcrumb className="flex items-center">
+                <BreadcrumbList className="flex items-center gap-1.5">
+                  <BreadcrumbItem className="hidden md:flex items-center">
+                    <BreadcrumbLink href="#" onClick={(e) => { e.preventDefault(); setCurrentTab('listen-now') }} className="text-[#8e8e93] hover:text-[#d1d1d6] font-light text-xs transition-colors tracking-tight">
+                      {breadcrumbParent}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:flex items-center text-[#8e8e93]/50" />
+                  <BreadcrumbItem className="flex items-center">
+                    <BreadcrumbPage className="text-[#fa233c] font-light text-xs tracking-tight">
+                      {breadcrumbChild}
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
             </div>
             
             {/* Right side custom window controls (No Drag) */}
