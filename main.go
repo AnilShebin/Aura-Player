@@ -2,11 +2,11 @@ package main
 
 import (
 	"embed"
-
 	"log"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
@@ -49,19 +49,29 @@ func main() {
 	})
 
 	// Create a new window with the necessary options.
-	// 'Title' is the title of the window.
-	// 'Mac' options tailor the window when running on macOS.
-	// 'BackgroundColour' is the background colour of the window.
-	// 'URL' is the URL that will be loaded into the webview.
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "Window 1",
+	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:     "Aura Music",
+		Width:     1280,
+		Height:    850,
+		MinWidth:  1120,
+		MinHeight: 720,
+		Frameless: true,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,
 			TitleBar:                application.MacTitleBarHiddenInset,
 		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
+		BackgroundType:   application.BackgroundTypeTransparent,
+		BackgroundColour: application.NewRGBA(18, 18, 18, 0),
 		URL:              "/",
+	})
+
+	// Dynamically handle window resize zones when maximized/restored to prevent buggy cursors
+	window.OnWindowEvent(events.Common.WindowMaximise, func(e *application.WindowEvent) {
+		window.SetResizable(false)
+	})
+	window.OnWindowEvent(events.Common.WindowUnMaximise, func(e *application.WindowEvent) {
+		window.SetResizable(true)
 	})
 
 	// Create a goroutine that emits an event containing the current time every second.
