@@ -1,0 +1,34 @@
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  albumId: string;
+  albumTitle: string;
+  duration: string;
+  durationSeconds: number;
+  coverUrl: string;
+  audioUrl: string;
+  playlists: string[];
+  lyrics?: string;
+  filePath?: string;
+  artwork?: string;
+}
+
+export interface Album {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string;
+  year: string;
+  genre: string;
+  songs: Song[];
+  artwork?: string;
+}
+
+export interface Playlist {
+  id: string;
+  name: string;
+  coverUrl: string;
+  description: string;
+  songs: Song[];
+}
