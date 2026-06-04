@@ -53,7 +53,7 @@ function App() {
   }, [playingSong, setPlayingSong])
 
   return (
-    <div className="relative w-screen h-screen flex flex-col items-center justify-center bg-zinc-950 text-white select-none overflow-hidden font-sans">
+    <div className="relative w-screen h-screen flex flex-col items-center justify-center bg-background text-foreground select-none overflow-hidden font-sans">
       {/* Global Grain/Noise Overlay */}
       <div className="grain-overlay" />
 
