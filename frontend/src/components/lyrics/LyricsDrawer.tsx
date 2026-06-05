@@ -4,16 +4,17 @@ import { useMusicStore } from '@/stores/musicStore'
 import { SyncedLyrics } from './SyncedLyrics'
 
 export const LyricsDrawer: React.FC = () => {
-  const { 
-    showLyrics, 
-    playingSong, 
-    currentTime, 
+  const {
+    showLyrics,
+    playingSong,
+    currentTime,
     isPlaying,
     seekSong,
     showOriginal,
     showTranslation,
     setShowTranslation,
     lyrics,
+    isMaximized,
   } = useMusicStore()
 
   // Derived: does this song have bilingual lyrics?
@@ -22,23 +23,22 @@ export const LyricsDrawer: React.FC = () => {
   return (
     <motion.div
       initial={false}
-      animate={{ width: showLyrics ? 340 : 0 }}
-      transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-      className="absolute right-0 top-0 bottom-0 z-20 h-full overflow-hidden bg-background/95 backdrop-blur-xl border-l border-border/20"
+      animate={{ width: showLyrics ? 300 : 0 }}
+      transition={{ duration: 0.2, ease: 'linear' }}
+      className={`${isMaximized ? 'relative' : 'absolute'} right-0 ${isMaximized ? 'right-auto' : ''} top-0 ${isMaximized ? 'top-auto' : ''} bottom-0 ${isMaximized ? 'bottom-auto' : ''} z-20 h-full overflow-hidden ${isMaximized ? 'bg-transparent' : 'bg-[#161616]/80 backdrop-blur-2xl'} ${isMaximized ? 'border-l-0' : 'border-l border-white/5'} shrink-0`}
       style={{ willChange: 'width' }}
     >
       {/* Inner fixed-width content — stays 340px wide, hidden by parent overflow:hidden */}
-      <div className="w-[340px] h-full flex flex-col pb-[92px] relative z-10">
+      <div className="w-[300px] h-full flex flex-col pb-[92px] relative z-10">
 
         {/* Translation Toggle Button — only shown for bilingual songs */}
         {hasTranslations && (
-          <button 
+          <button
             onClick={() => setShowTranslation(!showTranslation)}
-            className={`absolute bottom-[100px] right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${
-              showTranslation 
-                ? 'bg-secondary' 
+            className={`absolute bottom-[100px] right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${showTranslation
+                ? 'bg-secondary'
                 : 'bg-transparent hover:bg-secondary/50'
-            }`}
+              }`}
             title="Lyrics translation"
           >
             <svg viewBox="0 0 28 28" width="22" height="22" className="fill-foreground">
@@ -54,9 +54,9 @@ export const LyricsDrawer: React.FC = () => {
           </button>
         )}
 
-        <div className="flex-1 overflow-hidden pt-10 pb-4">
+        <div className="flex-1 overflow-hidden pt-3 pb-4">
           {playingSong ? (
-            <SyncedLyrics 
+            <SyncedLyrics
               lyrics={lyrics}
               currentTime={currentTime}
               isPlaying={isPlaying}

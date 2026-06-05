@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useMusicStore } from "@/stores/musicStore"
 import { cn } from "@/utils/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -160,6 +161,7 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { isMaximized } = useMusicStore()
 
   if (collapsible === "none") {
     return (
@@ -214,7 +216,10 @@ function Sidebar({
       <div
         data-slot="sidebar-gap"
         className={cn(
-          "relative w-(--sidebar-width-icon) bg-transparent transition-[width] duration-200 ease-linear",
+          "relative bg-transparent transition-[width] duration-200 ease-linear",
+          isMaximized 
+            ? "w-(--sidebar-width) group-data-[state=collapsed]:w-(--sidebar-width-icon)" 
+            : "w-(--sidebar-width-icon)",
           "group-data-[collapsible=offcanvas]:w-0",
           "group-data-[side=right]:rotate-180"
         )}
@@ -227,7 +232,10 @@ function Sidebar({
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+            : cn(
+                "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
+                !isMaximized && "group-data-[side=left]:border-r group-data-[side=right]:border-l"
+              ),
           className
         )}
         {...props}
@@ -549,7 +557,7 @@ function SidebarMenuAction({
       className={cn(
         "absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100 md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100 md:opacity-0",
         className
       )}
       {...props}

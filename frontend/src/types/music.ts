@@ -12,6 +12,8 @@ export interface Song {
   lyrics?: string;
   filePath?: string;
   artwork?: string;
+  isFavorite?: boolean;
+  plays?: number;
 }
 
 export interface Album {

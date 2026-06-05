@@ -3,7 +3,16 @@ package main
 import (
 	"embed"
 	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
+
+	"changeme/internal/library"
+	"changeme/internal/lyrics"
+	"changeme/internal/playback"
+	"changeme/internal/settings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -29,6 +38,49 @@ func init() {
 // logs any error that might occur.
 func main() {
 
+	settingsService, err := settings.NewSettingsService()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	libraryService, err := library.NewLibraryService(settingsService.GetDB())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	playbackService, err := playback.NewPlaybackService()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Custom HTTP asset handler to intercept artwork and local audio file requests
+	home, _ := os.UserHomeDir()
+	appDir := filepath.Join(home, ".aura")
+	artworkDir := filepath.Join(appDir, "artwork")
+
+	assetsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if strings.HasPrefix(path, "/artwork/") {
+			// Serve artwork from ~/.aura/artwork/
+			fileName := strings.TrimPrefix(path, "/artwork/")
+			filePath := filepath.Join(artworkDir, fileName)
+			http.ServeFile(w, r, filePath)
+			return
+		}
+
+		if path == "/audio-file" {
+			// Serve local audio file by absolute path
+			filePath := r.URL.Query().Get("path")
+			if filePath != "" {
+				http.ServeFile(w, r, filePath)
+				return
+			}
+		}
+
+		// Fallback to default Wails embedded asset handler
+		application.AssetFileServerFS(assets).ServeHTTP(w, r)
+	})
+
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
@@ -39,12 +91,19 @@ func main() {
 		Description: "A demo of using raw HTML & CSS",
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
+			application.NewService(settingsService),
+			application.NewService(libraryService),
+			application.NewService(playbackService),
+			application.NewService(lyrics.NewLyricsService()),
 		},
 		Assets: application.AssetOptions{
-			Handler: application.AssetFileServerFS(assets),
+			Handler: assetsHandler,
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		OnShutdown: func() {
+			playbackService.Close()
 		},
 	})
 
@@ -85,7 +144,7 @@ func main() {
 	}()
 
 	// Run the application. This blocks until the application has been exited.
-	err := app.Run()
+	err = app.Run()
 
 	// If an error occurred while running the application, log it and exit.
 	if err != nil {

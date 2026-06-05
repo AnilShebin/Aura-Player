@@ -1,0 +1,299 @@
+import React, { useRef, useState, useEffect } from 'react'
+import {
+  Music2,
+  Shuffle,
+  SkipBack,
+  Pause,
+  Play,
+  SkipForward,
+  Repeat,
+  Repeat1,
+  List,
+  MoreHorizontal
+} from "lucide-react"
+import { AnimatePresence } from 'framer-motion'
+import { useMusicStore } from '@/stores/musicStore'
+import { VolumeControl } from './VolumeControl'
+// Helper component for auto-scrolling text on hover if it overflows (infinite loop)
+const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLSpanElement>(null)
+  const [shouldScroll, setShouldScroll] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [textWidth, setTextWidth] = useState(0)
+
+  // Measure text and container widths on change
+  useEffect(() => {
+    if (containerRef.current && textRef.current) {
+      const containerWidth = containerRef.current.clientWidth
+      const currentTextWidth = textRef.current.scrollWidth
+      if (currentTextWidth > containerWidth) {
+        setShouldScroll(true)
+        setTextWidth(currentTextWidth)
+      } else {
+        setShouldScroll(false)
+        setTextWidth(0)
+      }
+    } else {
+      setShouldScroll(false)
+      setTextWidth(0)
+    }
+  }, [text])
+
+  // Reset hover state when text changes
+  useEffect(() => {
+    setIsHovered(false)
+  }, [text])
+
+  // Calculate speed: ~35px/s. One block is textWidth + 32px gap.
+  const blockWidth = textWidth + 32
+  const animationDuration = Math.max(3, blockWidth / 35)
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="overflow-hidden whitespace-nowrap w-full relative flex items-center"
+    >
+      <div
+        className="flex items-center"
+        style={{
+          width: 'max-content',
+          animation: isHovered && shouldScroll ? `marquee-scroll ${animationDuration}s linear infinite` : 'none',
+          animationDelay: '0.35s'
+        }}
+      >
+        <span ref={textRef} className={`select-none ${className}`}>
+          {text}
+        </span>
+
+        {shouldScroll && (
+          <>
+            <span className="inline-block w-8 shrink-0" />
+            <span className={`select-none ${className}`}>
+              {text}
+            </span>
+            <span className="inline-block w-8 shrink-0" />
+          </>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes marquee-scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+
+export const PlayerBar: React.FC = () => {
+  const {
+    playingSong,
+    isPlaying,
+    currentTime,
+    duration,
+    isShuffle,
+    setIsShuffle,
+    repeatMode,
+    setRepeatMode,
+    handlePlayPause,
+    handleNextTrack,
+    handlePrevTrack,
+    seekSong,
+    showLyrics,
+    setShowLyrics,
+    showQueue,
+    setShowQueue
+  } = useMusicStore()
+
+  const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false)
+  const progressBarRef = useRef<HTMLDivElement>(null)
+
+  // Calculate integrated progress bar percentage
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || duration === 0) return
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width))
+    seekSong(percentage * duration)
+  }
+
+  return (
+    <div
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[700px] h-[64px] bg-[#1c1c1e]/60 backdrop-blur-[40px] border border-white/10 rounded-full flex items-center px-6 z-30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 wails-no-drag"
+    >
+      {/* Grain Overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-overlay z-0">
+        <svg className="w-full h-full">
+          <filter id="noiseFilterHeader">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#noiseFilterHeader)" />
+        </svg>
+      </div>
+
+      {/* Playback Controls (Left Column) */}
+      <div className="flex items-center gap-5 mr-4 relative z-10 shrink-0">
+        <Shuffle
+          className={`w-3.5 h-3.5 cursor-pointer transition-colors ${isShuffle ? 'text-[#fa586a]' : 'text-zinc-500 hover:text-white'
+            }`}
+          onClick={() => setIsShuffle(!isShuffle)}
+        />
+        <SkipBack
+          className="w-5 h-5 text-white cursor-pointer hover:opacity-70 transition-opacity fill-current"
+          onClick={handlePrevTrack}
+        />
+        <button
+          onClick={handlePlayPause}
+          className="w-10 h-10 text-white hover:scale-105 active:scale-95 transition-transform duration-200 ease-out flex items-center justify-center cursor-pointer shrink-0 will-change-transform transform-gpu"
+        >
+          {isPlaying ? (
+            <Pause className="w-6 h-6 fill-current" />
+          ) : (
+            <Play className="w-6 h-6 fill-current translate-x-[1px]" />
+          )}
+        </button>
+        <SkipForward
+          className="w-5 h-5 text-white cursor-pointer hover:opacity-70 transition-opacity fill-current"
+          onClick={handleNextTrack}
+        />
+        {repeatMode === 'one' ? (
+          <Repeat1
+            className="w-3.5 h-3.5 cursor-pointer transition-colors text-[#fa586a]"
+            onClick={() => setRepeatMode('off')}
+          />
+        ) : (
+          <Repeat
+            className={`w-3.5 h-3.5 cursor-pointer transition-colors ${repeatMode === 'all' ? 'text-[#fa586a]' : 'text-zinc-500 hover:text-white'
+              }`}
+            onClick={() => setRepeatMode(repeatMode === 'off' ? 'all' : 'one')}
+          />
+        )}
+      </div>
+
+      {/* Centered Track Info (Integrated Center Column) */}
+      <div className="flex-1 flex items-center justify-center h-[46px] min-w-0 relative group z-10">
+        {playingSong ? (
+          <div className="flex items-center w-full bg-transparent rounded-[14px] h-full pl-2 pr-0 min-w-0 relative">
+
+            {/* Artwork */}
+            <div
+              className="w-8.5 h-8.5 rounded-md bg-zinc-800 overflow-hidden shrink-0 shadow-md relative group/art transition-all"
+            >
+              {playingSong.coverUrl ? (
+                <img
+                  src={playingSong.coverUrl}
+                  alt=""
+                  className="w-full h-full object-cover transition-transform group-hover/art:scale-110"
+                />
+              ) : (
+                <Music2 className="w-4 h-4 text-zinc-600 m-2.5" />
+              )}
+            </div>
+
+            {/* Song Text details with fade-out mask */}
+            <div
+              className="flex flex-col flex-1 min-w-0 pl-3 pr-2 justify-center relative h-full select-none"
+              style={{ WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 24px), transparent 100%)' }}
+            >
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <MarqueeText
+                  text={playingSong.title}
+                  className="text-[13px] font-bold text-white tracking-tight"
+                />
+                {playingSong.isFavorite && (
+                  <svg viewBox="0 0 24 24" width="10" height="10" className="fill-[#fa586a] shrink-0">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                )}
+              </div>
+              <div className="pb-2 min-w-0 flex items-center">
+                <MarqueeText
+                  text={`${playingSong.artist}${playingSong.albumTitle ? ` — ${playingSong.albumTitle}` : ''}`}
+                  className="text-[11px] text-zinc-400 font-medium tracking-tight leading-none"
+                />
+              </div>
+            </div>
+
+            {/* More details button (MoreHorizontal) */}
+            <button
+              className="p-1 hover:bg-white/10 rounded-full transition-colors shrink-0 text-zinc-400 hover:text-white cursor-pointer ml-1 relative z-10"
+              title="More Options"
+            >
+              <MoreHorizontal size={16} />
+            </button>
+
+            {/* Dynamic Sleek Scrubbable Progress Bar (At the very bottom of the parent wrapper) */}
+            <div
+              className="absolute bottom-0 left-2 right-0 h-[2px] bg-white/10 cursor-pointer group/progress z-30 overflow-hidden"
+              ref={progressBarRef}
+              onClick={handleProgressClick}
+            >
+              <div
+                className="h-full bg-white/50 group-hover/progress:bg-[#fa586a] rounded-full transition-colors relative"
+                style={{ width: `${progressPercent}%` }}
+              >
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white opacity-0 group-hover/progress:opacity-100 transition-opacity" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-[12px] font-semibold text-zinc-500 uppercase tracking-widest select-none">
+            <span>Aura Music</span>
+          </div>
+        )}
+      </div>
+
+      {/* Secondary Controls (Right Column) */}
+      <div className="flex items-center gap-4 ml-2.5 relative z-10 shrink-0">
+
+        {/* Synced Lyrics Toggle Button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowLyrics(!showLyrics); }}
+          className="p-1 transition-all cursor-pointer"
+          title="Toggle Lyrics"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="19"
+            height="19"
+            viewBox="0 0 18 18"
+            fill="currentColor"
+            className={`transition-all ${showLyrics ? 'text-[#fa233c] drop-shadow-[0_0_8px_rgba(250,35,60,0.6)]' : 'text-zinc-500 hover:text-white'}`}
+          >
+            <path d="m9.67 13.982-2.43 2.474c-.472.471-.79.675-1.145.675-.479 0-.623-.314-.623-1.012v-2.137H5.26c-1.406 0-1.915-.146-2.429-.42a2.877 2.877 0 0 1-1.192-1.192c-.274-.514-.421-1.024-.421-2.429V6.464c0-1.405.147-1.915.421-2.428a2.872 2.872 0 0 1 1.192-1.192c.514-.275 1.023-.421 2.429-.421h7.68c1.406 0 1.915.146 2.429.421a2.86 2.86 0 0 1 1.192 1.192c.274.513.421 1.023.421 2.428v3.477c0 1.405-.147 1.915-.421 2.429a2.866 2.866 0 0 1-1.192 1.192c-.514.274-1.023.42-2.429.42H9.67Zm-.974-.957c.257-.261.608-.408.974-.408h3.27c1.076 0 1.426-.068 1.785-.26.276-.147.484-.356.631-.632.192-.358.26-.709.26-1.784V6.464c0-1.075-.068-1.426-.26-1.784a1.49 1.49 0 0 0-.631-.631c-.359-.192-.709-.26-1.785-.26H5.26c-1.075 0-1.425.068-1.785.26a1.5 1.5 0 0 0-.631.631c-.192.358-.26.709-.26 1.784v3.477c0 1.075.068 1.426.26 1.784.148.276.356.485.631.632.36.192.71.26 1.785.26h.212c.754 0 1.365.611 1.365 1.365v.934l1.859-1.891ZM5.422 8.01c0-.821.67-1.383 1.554-1.383.976 0 1.599.726 1.599 1.634 0 1.73-1.46 2.084-2.242 2.084-.222 0-.381-.148-.381-.329 0-.173.084-.294.372-.364.502-.12 1.005.028 1.274-.491h-.056c-.185.208-.483.242-.771.242-.837 0-1.349-.614-1.349-1.393Zm4.204 0c0-.821.669-1.383 1.553-1.383.976 0 1.6.726 1.6 1.634 0 1.73-1.46 2.084-2.242 2.084-.223 0-.381-.148-.381-.329 0-.173.084-.294.372-.364.502-.12 1.004.028 1.274-.491h-.056c-.186.208-.483.242-.772.242-.837 0-1.348-.614-1.348-1.393Z"></path>
+          </svg>
+        </button>
+
+        {/* Play Queue List Toggle Button */}
+        <List
+          className={`w-[18px] h-[18px] cursor-pointer transition-colors ${showQueue ? 'text-[#fa233c] drop-shadow-[0_0_8px_rgba(250,35,60,0.6)]' : 'text-zinc-500 hover:text-white'
+            }`}
+          onClick={() => setShowQueue(!showQueue)}
+        />
+
+        {/* Dynamic Inline Volume Pill */}
+        <div className="relative flex items-center">
+          <AnimatePresence mode="wait">
+            <VolumeControl
+              showVolumeSlider={showVolumeSlider}
+              setShowVolumeSlider={setShowVolumeSlider}
+            />
+          </AnimatePresence>
+        </div>
+
+      </div>
+    </div>
+  )
+}

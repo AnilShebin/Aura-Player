@@ -1,34 +1,27 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { X, Music } from 'lucide-react'
+import { Music } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 
 export const QueueDrawer: React.FC = () => {
-  const { 
-    showQueue, 
-    setShowQueue, 
-    playQueue, 
+  const {
+    showQueue,
+    playQueue,
     currentQueueIndex,
-    playSongDirect
+    playSongDirect,
+    isMaximized
   } = useMusicStore()
 
   return (
     <motion.div
       initial={false}
-      animate={{ width: showQueue ? 360 : 0 }}
-      transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-      className="absolute right-0 top-0 bottom-0 z-20 h-full overflow-hidden border-l border-border/20 bg-background/95 backdrop-blur-xl"
+      animate={{ width: showQueue ? 300 : 0 }}
+      transition={{ duration: 0.2, ease: 'linear' }}
+      className={`${isMaximized ? 'relative' : 'absolute'} right-0 ${isMaximized ? 'right-auto' : ''} top-0 ${isMaximized ? 'top-auto' : ''} bottom-0 ${isMaximized ? 'bottom-auto' : ''} z-20 h-full overflow-hidden ${isMaximized ? 'bg-transparent' : 'bg-[#161616]/80 backdrop-blur-2xl'} ${isMaximized ? 'border-l-0' : 'border-l border-white/5'} shrink-0`}
       style={{ willChange: 'width' }}
     >
       {/* Inner fixed-width content — stays 360px wide, hidden by parent overflow:hidden */}
-      <div className="w-[360px] h-full flex flex-col pb-[92px]">
-
-        <div className="pt-14 pb-4 px-4 border-b border-border/30 flex items-center justify-between shrink-0">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">Upcoming Tracks</span>
-          <button onClick={() => setShowQueue(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-            <X size={15} />
-          </button>
-        </div>
+      <div className="w-[300px] h-full flex flex-col pb-[92px]">
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
           {playQueue.length === 0 ? (
@@ -40,7 +33,7 @@ export const QueueDrawer: React.FC = () => {
             playQueue.map((song, i) => {
               const isCurrent = i === currentQueueIndex
               return (
-                <div 
+                <div
                   key={song.id || song.filePath}
                   onClick={() => playSongDirect(song, playQueue)}
                   className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${isCurrent ? 'bg-primary/20 border border-primary/20' : 'hover:bg-secondary/50 border border-transparent'}`}
