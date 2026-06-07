@@ -3,7 +3,7 @@ import { Settings as SettingsIcon, Play, ShieldAlert, Folder, Sliders, ChevronRi
 import { useMusicStore } from '@/stores/musicStore'
 import { Dialogs } from '@wailsio/runtime'
 import { AddFolder, DeleteFolder, GetFolders } from '@/services/settingsService'
-import { ScanLibrary, GetSongs } from '@/services/libraryService'
+import { ScanLibrary, GetSongs, GetAlbums } from '@/services/libraryService'
 
 type SettingSection = 'main' | 'general' | 'playback' | 'restrictions' | 'files' | 'advanced'
 
@@ -68,6 +68,8 @@ export const Settings: React.FC = () => {
       }
       const songs = await GetSongs()
       useMusicStore.setState({ librarySongs: songs || [] })
+      const albums = await GetAlbums()
+      useMusicStore.setState({ libraryAlbums: albums || [] })
     } catch (err) {
       console.error('Failed to load music folders:', err)
     }

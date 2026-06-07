@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useMusicStore } from '@/stores/musicStore'
 import { AmbientBackdrop } from '@/components/player/AmbientBackdrop'
+import { FullscreenPlayer } from '@/components/player/FullscreenPlayer'
 import { AppSidebar } from '@/components/app-sidebar'
 import { LyricsDrawer } from '@/components/lyrics/LyricsDrawer'
 import { QueueDrawer } from '@/components/player-bar/audio/QueueDrawer'
@@ -18,47 +19,10 @@ import { PanelLeft } from 'lucide-react'
 import { Window, Events } from '@wailsio/runtime'
 import { TitleBar } from '@/components/window-controls/TitleBar'
 import { IsFirstTime, GetFolders } from '@/services/settingsService'
-import { GetSongs, ScanLibrary } from '@/services/libraryService'
+import { GetSongs, ScanLibrary, GetAlbums } from '@/services/libraryService'
 import { OnboardingWelcome } from '@/components/settings/OnboardingWelcome'
+import { useSmoothScroll } from '@/hooks/useSmoothScroll'
 
-const MOCK_SONGS = [
-  {
-    id: "yaathi-1",
-    title: "Yaathi Yaathi",
-    artist: "Abhishek C S, Yazin Nizar & Haripriya",
-    albumId: "yaathi-yaathi",
-    albumTitle: "Yaathi Yaathi - Single",
-    duration: "3:45",
-    durationSeconds: 225,
-    coverUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&h=600&fit=crop",
-    audioUrl: "",
-    playlists: []
-  },
-  {
-    id: "unnale-1",
-    title: "June Ponal July Kaatru",
-    artist: "Harris Jayaraj, Krish & Arun",
-    albumId: "unnale-unnale",
-    albumTitle: "Unnale Unnale OST",
-    duration: "5:52",
-    durationSeconds: 352,
-    coverUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&h=600&fit=crop",
-    audioUrl: "",
-    playlists: []
-  },
-  {
-    id: "minnal-1",
-    title: "Minnalvala",
-    artist: "Jakes Bejoy, Sid Sriram & Sithara",
-    albumId: "minnalvala",
-    albumTitle: "Narivetta - Single",
-    duration: "3:40",
-    durationSeconds: 220,
-    coverUrl: "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=600&h=600&fit=crop",
-    audioUrl: "",
-    playlists: []
-  }
-]
 
 const checkIfMaximized = (): boolean => {
   if (document.fullscreenElement) return true
@@ -68,22 +32,23 @@ const checkIfMaximized = (): boolean => {
 }
 
 function App() {
-  const {
-    playingSong,
-    showAmbientGlow,
-    setShowAmbientGlow,
-    sidebarCollapsed,
-    setSidebarCollapsed,
-    showLyrics,
-    setShowLyrics,
-    showQueue,
-    setShowQueue,
-    playQueue,
-    playSongDirect,
-    currentTab,
-    isMaximized,
-    setIsMaximized
-  } = useMusicStore()
+  const playingSong = useMusicStore(state => state.playingSong)
+  const showAmbientGlow = useMusicStore(state => state.showAmbientGlow)
+  const setShowAmbientGlow = useMusicStore(state => state.setShowAmbientGlow)
+  const sidebarCollapsed = useMusicStore(state => state.sidebarCollapsed)
+  const setSidebarCollapsed = useMusicStore(state => state.setSidebarCollapsed)
+  const showLyrics = useMusicStore(state => state.showLyrics)
+  const setShowLyrics = useMusicStore(state => state.setShowLyrics)
+  const showQueue = useMusicStore(state => state.showQueue)
+  const setShowQueue = useMusicStore(state => state.setShowQueue)
+  const playQueue = useMusicStore(state => state.playQueue)
+  const playSongDirect = useMusicStore(state => state.playSongDirect)
+  const currentTab = useMusicStore(state => state.currentTab)
+  const isMaximized = useMusicStore(state => state.isMaximized)
+  const setIsMaximized = useMusicStore(state => state.setIsMaximized)
+
+  const mainRef = useRef<HTMLDivElement>(null)
+  useSmoothScroll(mainRef, currentTab !== 'songs' && currentTab !== 'albums')
 
   const [isAppFullscreen, setIsAppFullscreen] = useState(!!document.fullscreenElement)
   const [os, setOs] = useState<'mac' | 'windows' | 'linux'>('windows')
@@ -100,15 +65,59 @@ function App() {
       const songs = await GetSongs()
       useMusicStore.setState({ librarySongs: songs || [] })
       
-      // Auto-play or set initial song if queue is empty
+      const albums = await GetAlbums()
+      useMusicStore.setState({ libraryAlbums: albums || [] })
+
+      // Pre-select the first song so the player bar shows info, but do NOT auto-play
       if (songs && songs.length > 0 && !useMusicStore.getState().playingSong) {
-        playSongDirect(songs[0], songs)
-      } else if ((!songs || songs.length === 0) && !useMusicStore.getState().playingSong) {
-        // Fallback to mock songs if library is empty
-        playSongDirect(MOCK_SONGS[0], MOCK_SONGS)
+        useMusicStore.setState({
+          playingSong: songs[0],
+          playQueue: songs,
+          currentQueueIndex: 0,
+          isPlaying: false
+        })
       }
     } catch (err) {
       console.error('Failed to load library:', err)
+    }
+  }
+
+  // Refresh songs/albums data when files change on disk
+  const refreshLibraryData = async () => {
+    try {
+      const songs = await GetSongs()
+      useMusicStore.setState({ librarySongs: songs || [] })
+      
+      const albums = await GetAlbums()
+      useMusicStore.setState({ libraryAlbums: albums || [] })
+
+      // If the currently selected album is still open, refresh it in the UI as well
+      const selectedAlbum = useMusicStore.getState().selectedAlbum
+      if (selectedAlbum) {
+        const updatedAlbum = (albums || []).find(a => a.id === selectedAlbum.id)
+        if (updatedAlbum) {
+          useMusicStore.setState({ 
+            selectedAlbum: {
+              id: updatedAlbum.id,
+              title: updatedAlbum.title,
+              artist: updatedAlbum.albumArtist,
+              coverUrl: updatedAlbum.coverUrl || '',
+              year: updatedAlbum.year || '2026',
+              genre: updatedAlbum.genre || 'Local Audio',
+              songs: updatedAlbum.songs || [],
+              codec: updatedAlbum.codec || 'Unknown',
+              quality: updatedAlbum.quality || 'High Quality',
+              sampleRate: updatedAlbum.sampleRate,
+              bitDepth: updatedAlbum.bitDepth,
+              bitrate: updatedAlbum.bitrate
+            }
+          })
+        } else {
+          useMusicStore.setState({ selectedAlbum: null })
+        }
+      }
+    } catch (err) {
+      console.error('Failed to refresh library:', err)
     }
   }
 
@@ -144,12 +153,18 @@ function App() {
       useMusicStore.getState().handleNextTrack()
     }
 
+    const handleLibraryChanged = () => {
+      refreshLibraryData()
+    }
+
     const unsubStatus = Events.On('audio-status-update', handleStatusUpdate)
     const unsubEnded = Events.On('audio-ended', handleEnded)
+    const unsubLibrary = Events.On('library-changed', handleLibraryChanged)
 
     return () => {
       unsubStatus()
       unsubEnded()
+      unsubLibrary()
     }
   }, [])
 
@@ -263,9 +278,12 @@ function App() {
             {/* CENTER AREA — Standard Routed Content Viewport */}
             {/* Extra px-[35px] compensates for the 70px collapsed sidebar icon bar (35px each side)   */}
             {/* so opening a drawer doesn't visually shift the content center.                          */}
-            <main className={`flex-1 overflow-y-auto relative h-full pb-0 custom-scrollbar min-w-0 transition-[padding] duration-200 ease-linear ${
-              isMaximized && !showLyrics && !showQueue ? 'px-[67px]' : 'px-8'
-            }`}>
+            <main
+              ref={mainRef}
+              className={`flex-1 ${currentTab === 'songs' || currentTab === 'albums' ? 'overflow-hidden' : 'overflow-y-auto'} relative h-full pb-0 custom-scrollbar min-w-0 transition-[padding] duration-200 ease-linear ${
+                isMaximized && !showLyrics && !showQueue ? 'px-[67px]' : 'px-8'
+              }`}
+            >
               {currentTab === 'listen-now' ? (
                 <ListenNow />
               ) : currentTab === 'favorites' ? (
@@ -380,6 +398,9 @@ function App() {
               loadLibrary()
             }} />
           )}
+
+          {/* Fullscreen Full Page Player Overlay */}
+          <FullscreenPlayer />
         </div>
       </SidebarProvider>
     </TooltipProvider>

@@ -7,5 +7,6 @@ export {
 };
 
 export {
+    AlbumSummary,
     Song
 } from "./models.js";

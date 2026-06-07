@@ -14,15 +14,20 @@ type LyricLine struct {
 
 // LyricsResult is the structured response returned to the frontend.
 type LyricsResult struct {
-	Synced bool        `json:"synced"`
-	Lines  []LyricLine `json:"lines"`
-	Raw    string      `json:"raw"`
+	Synced  bool        `json:"synced"`
+	Lines   []LyricLine `json:"lines"`
+	Raw     string      `json:"raw"`
+	HasTTML bool        `json:"hasTTML"`
 }
 
 // parseLyrics detects format and parses raw lyrics text into structured lines.
 func parseLyrics(raw string) LyricsResult {
 	normalized := strings.ReplaceAll(raw, "\r\n", "\n")
 	normalized = strings.ReplaceAll(normalized, "\r", "\n")
+
+	if strings.Contains(normalized, "<tt ") || strings.Contains(normalized, "<tt>") {
+		return LyricsResult{Synced: true, Lines: []LyricLine{}, Raw: raw, HasTTML: true}
+	}
 
 	if strings.Contains(normalized, "-->") {
 		return parseSRTVTT(normalized, raw)

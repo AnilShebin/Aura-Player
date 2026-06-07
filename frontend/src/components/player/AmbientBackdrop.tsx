@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useMusicStore } from '@/stores/musicStore'
 
 export const AmbientBackdrop: React.FC = () => {
-  const { currentTab, selectedAlbum, selectedPlaylist, playingSong, showAmbientGlow } = useMusicStore()
+  const playingSong = useMusicStore(state => state.playingSong)
+  const showAmbientGlow = useMusicStore(state => state.showAmbientGlow)
 
-  // Calculate background artwork URL
-  const bgArtworkUrl = (currentTab === 'album-detail' && selectedAlbum)
-    ? (selectedAlbum.coverUrl || selectedAlbum.artwork)
-    : (currentTab === 'playlist-detail' && selectedPlaylist)
-      ? selectedPlaylist.coverUrl
-      : (playingSong?.coverUrl || playingSong?.artwork)
+  const bgArtworkUrl = React.useMemo(() => {
+    return playingSong?.coverUrl || playingSong?.artwork || ''
+  }, [playingSong])
 
   const [useFallback, setUseFallback] = useState(false)
 

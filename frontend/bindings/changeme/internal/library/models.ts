@@ -5,10 +5,72 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class AlbumSummary {
+    "id": string;
+    "title": string;
+    "albumArtist": string;
+    "year": string;
+    "genre": string;
+    "coverUrl": string;
+    "songCount": number;
+    "songs": Song[];
+    "codec": string;
+    "quality": string;
+
+    /** Creates a new AlbumSummary instance. */
+    constructor($$source: Partial<AlbumSummary> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+        if (!("albumArtist" in $$source)) {
+            this["albumArtist"] = "";
+        }
+        if (!("year" in $$source)) {
+            this["year"] = "";
+        }
+        if (!("genre" in $$source)) {
+            this["genre"] = "";
+        }
+        if (!("coverUrl" in $$source)) {
+            this["coverUrl"] = "";
+        }
+        if (!("songCount" in $$source)) {
+            this["songCount"] = 0;
+        }
+        if (!("songs" in $$source)) {
+            this["songs"] = [];
+        }
+        if (!("codec" in $$source)) {
+            this["codec"] = "";
+        }
+        if (!("quality" in $$source)) {
+            this["quality"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AlbumSummary instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AlbumSummary {
+        const $$createField7_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("songs" in $$parsedSource) {
+            $$parsedSource["songs"] = $$createField7_0($$parsedSource["songs"]);
+        }
+        return new AlbumSummary($$parsedSource as Partial<AlbumSummary>);
+    }
+}
+
 export class Song {
     "id": string;
     "title": string;
     "artist": string;
+    "albumArtist": string;
     "albumId": string;
     "albumTitle": string;
     "duration": string;
@@ -19,6 +81,15 @@ export class Song {
     "filePath": string;
     "artwork": string;
     "isFavorite": boolean;
+    "year": string;
+    "genre": string;
+    "codec": string;
+    "quality": string;
+    "sampleRate": number;
+    "bitDepth": number;
+    "bitrate": number;
+    "hasTTML": boolean;
+    "copyright": string;
 
     /** Creates a new Song instance. */
     constructor($$source: Partial<Song> = {}) {
@@ -30,6 +101,9 @@ export class Song {
         }
         if (!("artist" in $$source)) {
             this["artist"] = "";
+        }
+        if (!("albumArtist" in $$source)) {
+            this["albumArtist"] = "";
         }
         if (!("albumId" in $$source)) {
             this["albumId"] = "";
@@ -61,6 +135,33 @@ export class Song {
         if (!("isFavorite" in $$source)) {
             this["isFavorite"] = false;
         }
+        if (!("year" in $$source)) {
+            this["year"] = "";
+        }
+        if (!("genre" in $$source)) {
+            this["genre"] = "";
+        }
+        if (!("codec" in $$source)) {
+            this["codec"] = "";
+        }
+        if (!("quality" in $$source)) {
+            this["quality"] = "";
+        }
+        if (!("sampleRate" in $$source)) {
+            this["sampleRate"] = 0;
+        }
+        if (!("bitDepth" in $$source)) {
+            this["bitDepth"] = 0;
+        }
+        if (!("bitrate" in $$source)) {
+            this["bitrate"] = 0;
+        }
+        if (!("hasTTML" in $$source)) {
+            this["hasTTML"] = false;
+        }
+        if (!("copyright" in $$source)) {
+            this["copyright"] = "";
+        }
 
         Object.assign(this, $$source);
     }
@@ -69,14 +170,16 @@ export class Song {
      * Creates a new Song instance from a string or object.
      */
     static createFrom($$source: any = {}): Song {
-        const $$createField9_0 = $$createType0;
+        const $$createField10_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("playlists" in $$parsedSource) {
-            $$parsedSource["playlists"] = $$createField9_0($$parsedSource["playlists"]);
+            $$parsedSource["playlists"] = $$createField10_0($$parsedSource["playlists"]);
         }
         return new Song($$parsedSource as Partial<Song>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = $Create.Array($Create.Any);
+const $$createType0 = Song.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = $Create.Array($Create.Any);

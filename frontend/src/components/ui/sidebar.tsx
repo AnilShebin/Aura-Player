@@ -161,7 +161,7 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-  const { isMaximized } = useMusicStore()
+  const isMaximized = useMusicStore(state => state.isMaximized)
 
   if (collapsible === "none") {
     return (

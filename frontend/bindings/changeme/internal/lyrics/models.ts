@@ -44,6 +44,7 @@ export class LyricsResult {
     "synced": boolean;
     "lines": LyricLine[];
     "raw": string;
+    "hasTTML": boolean;
 
     /** Creates a new LyricsResult instance. */
     constructor($$source: Partial<LyricsResult> = {}) {
@@ -55,6 +56,9 @@ export class LyricsResult {
         }
         if (!("raw" in $$source)) {
             this["raw"] = "";
+        }
+        if (!("hasTTML" in $$source)) {
+            this["hasTTML"] = false;
         }
 
         Object.assign(this, $$source);

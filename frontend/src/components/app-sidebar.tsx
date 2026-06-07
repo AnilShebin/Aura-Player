@@ -18,12 +18,10 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
-  const {
-    currentTab,
-    setCurrentTab,
-    sidebarCollapsed,
-    isPlaying,
-  } = useMusicStore()
+  const currentTab = useMusicStore(state => state.currentTab)
+  const setCurrentTab = useMusicStore(state => state.setCurrentTab)
+  const sidebarCollapsed = useMusicStore(state => state.sidebarCollapsed)
+  const isPlaying = useMusicStore(state => state.isPlaying)
 
   // Use a constant !pl-[13px] and !pr-3. When collapsed, the padding becomes !px-[13px].
   // By maintaining justify-start, the icon remains locked at exactly 13px from the left edge, preventing animation jump.
@@ -202,17 +200,17 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
               </SidebarMenuItem>
 
               <SidebarMenuItem className="relative">
-                {currentTab === 'albums' && (
+                {(currentTab === 'albums' || currentTab === 'album-detail') && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full z-20" />
                 )}
                 <SidebarMenuButton
                   onClick={() => setCurrentTab('albums')}
-                  isActive={currentTab === 'albums'}
+                  isActive={currentTab === 'albums' || currentTab === 'album-detail'}
                   tooltip="Albums"
-                  className={getLinkClass(currentTab === 'albums')}
+                  className={getLinkClass(currentTab === 'albums' || currentTab === 'album-detail')}
                 >
-                  <span className={getIconWrapperClass(currentTab === 'albums')}>
-                    <Disc className={getIconClass(currentTab === 'albums')} />
+                  <span className={getIconWrapperClass(currentTab === 'albums' || currentTab === 'album-detail')}>
+                    <Disc className={getIconClass(currentTab === 'albums' || currentTab === 'album-detail')} />
                   </span>
                   {!sidebarCollapsed && <span>Albums</span>}
                 </SidebarMenuButton>

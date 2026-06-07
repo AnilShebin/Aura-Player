@@ -13,3 +13,27 @@ export function ScanLibrary(folders: string[]): $CancellablePromise<number> {
 export function ToggleFavorite(songID: string): $CancellablePromise<boolean> {
     return $Call.ByID(3775055103, songID);
 }
+
+export interface AlbumSummary {
+  id: string
+  title: string
+  albumArtist: string
+  year?: string
+  genre?: string
+  coverUrl?: string
+  songCount: number
+  songs: Song[]
+  codec?: string
+  quality?: string
+  sampleRate?: number
+  bitDepth?: number
+  bitrate?: number
+}
+
+export function GetAlbums(): $CancellablePromise<AlbumSummary[]> {
+    return $Call.ByID(2700323389);
+}
+
+export function GetSongsByAlbum(albumID: string): $CancellablePromise<Song[] > {
+    return $Call.ByID(3414178931, albumID);
+}

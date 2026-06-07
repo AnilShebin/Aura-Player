@@ -8,16 +8,14 @@ interface VolumeControlProps {
   setShowVolumeSlider: (show: boolean) => void
 }
 
-export const VolumeControl: React.FC<VolumeControlProps> = ({
+export const VolumeControl: React.FC<VolumeControlProps> = React.memo(({
   showVolumeSlider,
   setShowVolumeSlider
 }) => {
-  const {
-    volume,
-    setVolume,
-    isMuted,
-    setIsMuted
-  } = useMusicStore()
+  const volume = useMusicStore(state => state.volume)
+  const setVolume = useMusicStore(state => state.setVolume)
+  const isMuted = useMusicStore(state => state.isMuted)
+  const setIsMuted = useMusicStore(state => state.setIsMuted)
 
   if (!showVolumeSlider) {
     return (
@@ -66,7 +64,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
         />
         <div 
-          className="h-full bg-white rounded-full transition-all duration-75" 
+          className="h-full bg-white rounded-full transition-[width] duration-75" 
           style={{ width: `${isMuted ? 0 : volume * 100}%` }} 
         />
       </div>
@@ -80,4 +78,6 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
       </button>
     </motion.div>
   )
-}
+})
+
+VolumeControl.displayName = 'VolumeControl'

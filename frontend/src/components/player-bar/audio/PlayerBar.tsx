@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useCallback } from 'react'
 import {
   Music2,
   Shuffle,
@@ -14,8 +14,9 @@ import {
 import { AnimatePresence } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { VolumeControl } from './VolumeControl'
+
 // Helper component for auto-scrolling text on hover if it overflows (infinite loop)
-const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+const MarqueeText: React.FC<{ text: string; className?: string }> = React.memo(({ text, className }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLSpanElement>(null)
   const [shouldScroll, setShouldScroll] = useState(false)
@@ -23,7 +24,7 @@ const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, cla
   const [textWidth, setTextWidth] = useState(0)
 
   // Measure text and container widths on change
-  useEffect(() => {
+  React.useEffect(() => {
     if (containerRef.current && textRef.current) {
       const containerWidth = containerRef.current.clientWidth
       const currentTextWidth = textRef.current.scrollWidth
@@ -41,19 +42,21 @@ const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, cla
   }, [text])
 
   // Reset hover state when text changes
-  useEffect(() => {
+  React.useEffect(() => {
     setIsHovered(false)
   }, [text])
 
-  // Calculate speed: ~35px/s. One block is textWidth + 32px gap.
   const blockWidth = textWidth + 32
   const animationDuration = Math.max(3, blockWidth / 35)
+
+  const handleMouseEnter = () => setIsHovered(true)
+  const handleMouseLeave = () => setIsHovered(false)
 
   return (
     <div
       ref={containerRef}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="overflow-hidden whitespace-nowrap w-full relative flex items-center"
     >
       <div
@@ -91,33 +94,16 @@ const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, cla
       `}</style>
     </div>
   )
-}
+})
+MarqueeText.displayName = 'MarqueeText'
 
-
-export const PlayerBar: React.FC = () => {
-  const {
-    playingSong,
-    isPlaying,
-    currentTime,
-    duration,
-    isShuffle,
-    setIsShuffle,
-    repeatMode,
-    setRepeatMode,
-    handlePlayPause,
-    handleNextTrack,
-    handlePrevTrack,
-    seekSong,
-    showLyrics,
-    setShowLyrics,
-    showQueue,
-    setShowQueue
-  } = useMusicStore()
-
-  const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false)
+// Isolated ProgressBar component to prevent continuous ticks from re-rendering the whole player bar
+const ProgressBar: React.FC = () => {
+  const currentTime = useMusicStore(state => state.currentTime)
+  const duration = useMusicStore(state => state.duration)
+  const seekSong = useMusicStore(state => state.seekSong)
   const progressBarRef = useRef<HTMLDivElement>(null)
 
-  // Calculate integrated progress bar percentage
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -130,7 +116,57 @@ export const PlayerBar: React.FC = () => {
 
   return (
     <div
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[700px] h-[64px] bg-[#1c1c1e]/60 backdrop-blur-[40px] border border-white/10 rounded-full flex items-center px-6 z-30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 wails-no-drag"
+      className="absolute bottom-0 left-2 right-0 h-[2px] bg-white/10 cursor-pointer group/progress z-30 overflow-hidden"
+      ref={progressBarRef}
+      onClick={handleProgressClick}
+    >
+      <div
+        className="h-full bg-white/50 group-hover/progress:bg-[#fa586a] rounded-full transition-colors relative"
+        style={{ width: `${progressPercent}%` }}
+      >
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white opacity-0 group-hover/progress:opacity-100 transition-opacity" />
+      </div>
+    </div>
+  )
+}
+
+export const PlayerBar: React.FC = () => {
+  const playingSong = useMusicStore(state => state.playingSong)
+  const isPlaying = useMusicStore(state => state.isPlaying)
+  const isShuffle = useMusicStore(state => state.isShuffle)
+  const setIsShuffle = useMusicStore(state => state.setIsShuffle)
+  const repeatMode = useMusicStore(state => state.repeatMode)
+  const setRepeatMode = useMusicStore(state => state.setRepeatMode)
+  const handlePlayPause = useMusicStore(state => state.handlePlayPause)
+  const handleNextTrack = useMusicStore(state => state.handleNextTrack)
+  const handlePrevTrack = useMusicStore(state => state.handlePrevTrack)
+  const showLyrics = useMusicStore(state => state.showLyrics)
+  const setShowLyrics = useMusicStore(state => state.setShowLyrics)
+  const showQueue = useMusicStore(state => state.showQueue)
+  const setShowQueue = useMusicStore(state => state.setShowQueue)
+  const setShowFullscreenPlayer = useMusicStore(state => state.setShowFullscreenPlayer)
+
+  const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false)
+
+  const toggleShuffle = useCallback(() => setIsShuffle(!isShuffle), [isShuffle, setIsShuffle])
+  const toggleRepeat = useCallback(() => {
+    if (repeatMode === 'one') {
+      setRepeatMode('off')
+    } else {
+      setRepeatMode(repeatMode === 'off' ? 'all' : 'one')
+    }
+  }, [repeatMode, setRepeatMode])
+
+  const toggleLyrics = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowLyrics(!showLyrics)
+  }, [showLyrics, setShowLyrics])
+
+  const toggleQueue = useCallback(() => setShowQueue(!showQueue), [showQueue, setShowQueue])
+
+  return (
+    <div
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[700px] h-[64px] bg-[#1c1c1e]/60 backdrop-blur-[40px] border border-white/10 rounded-full flex items-center px-6 z-30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden transition-[opacity,transform] duration-300 wails-no-drag"
     >
       {/* Grain Overlay */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-overlay z-0">
@@ -146,12 +182,11 @@ export const PlayerBar: React.FC = () => {
       {/* Playback Controls (Left Column) */}
       <div className="flex items-center gap-5 mr-4 relative z-10 shrink-0">
         <Shuffle
-          className={`w-3.5 h-3.5 cursor-pointer transition-colors ${isShuffle ? 'text-[#fa586a]' : 'text-zinc-500 hover:text-white'
-            }`}
-          onClick={() => setIsShuffle(!isShuffle)}
+          className={`w-3.5 h-3.5 cursor-pointer transition-colors duration-150 ${isShuffle ? 'text-[#fa586a]' : 'text-zinc-500 hover:text-white'}`}
+          onClick={toggleShuffle}
         />
         <SkipBack
-          className="w-5 h-5 text-white cursor-pointer hover:opacity-70 transition-opacity fill-current"
+          className="w-5 h-5 text-white cursor-pointer hover:opacity-70 transition-opacity duration-150 fill-current"
           onClick={handlePrevTrack}
         />
         <button
@@ -165,19 +200,18 @@ export const PlayerBar: React.FC = () => {
           )}
         </button>
         <SkipForward
-          className="w-5 h-5 text-white cursor-pointer hover:opacity-70 transition-opacity fill-current"
+          className="w-5 h-5 text-white cursor-pointer hover:opacity-70 transition-opacity duration-150 fill-current"
           onClick={handleNextTrack}
         />
         {repeatMode === 'one' ? (
           <Repeat1
-            className="w-3.5 h-3.5 cursor-pointer transition-colors text-[#fa586a]"
-            onClick={() => setRepeatMode('off')}
+            className="w-3.5 h-3.5 cursor-pointer transition-colors duration-150 text-[#fa586a]"
+            onClick={toggleRepeat}
           />
         ) : (
           <Repeat
-            className={`w-3.5 h-3.5 cursor-pointer transition-colors ${repeatMode === 'all' ? 'text-[#fa586a]' : 'text-zinc-500 hover:text-white'
-              }`}
-            onClick={() => setRepeatMode(repeatMode === 'off' ? 'all' : 'one')}
+            className={`w-3.5 h-3.5 cursor-pointer transition-colors duration-150 ${repeatMode === 'all' ? 'text-[#fa586a]' : 'text-zinc-500 hover:text-white'}`}
+            onClick={toggleRepeat}
           />
         )}
       </div>
@@ -189,17 +223,28 @@ export const PlayerBar: React.FC = () => {
 
             {/* Artwork */}
             <div
-              className="w-8.5 h-8.5 rounded-md bg-zinc-800 overflow-hidden shrink-0 shadow-md relative group/art transition-all"
+              onClick={() => setShowFullscreenPlayer(true)}
+              className="w-8.5 h-8.5 rounded-md bg-zinc-800 overflow-hidden shrink-0 shadow-md relative group/art transition-transform duration-200 cursor-pointer"
             >
               {playingSong.coverUrl ? (
                 <img
                   src={playingSong.coverUrl}
                   alt=""
-                  className="w-full h-full object-cover transition-transform group-hover/art:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover/art:scale-110"
                 />
               ) : (
                 <Music2 className="w-4 h-4 text-zinc-600 m-2.5" />
               )}
+
+              {/* Hover Overlay with Diagonal Expand Icon */}
+              <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover/art:opacity-100 transition-opacity duration-200">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+                  <polyline points="9 3 3 3 3 9" />
+                  <polyline points="15 21 21 21 21 15" />
+                  <line x1="3" y1="3" x2="10" y2="10" />
+                  <line x1="21" y1="21" x2="14" y2="14" />
+                </svg>
+              </div>
             </div>
 
             {/* Song Text details with fade-out mask */}
@@ -226,27 +271,16 @@ export const PlayerBar: React.FC = () => {
               </div>
             </div>
 
-            {/* More details button (MoreHorizontal) */}
+            {/* More details button */}
             <button
-              className="p-1 hover:bg-white/10 rounded-full transition-colors shrink-0 text-zinc-400 hover:text-white cursor-pointer ml-1 relative z-10"
+              className="p-1 hover:bg-white/10 rounded-full transition-colors duration-150 shrink-0 text-zinc-400 hover:text-white cursor-pointer ml-1 relative z-10"
               title="More Options"
             >
               <MoreHorizontal size={16} />
             </button>
 
-            {/* Dynamic Sleek Scrubbable Progress Bar (At the very bottom of the parent wrapper) */}
-            <div
-              className="absolute bottom-0 left-2 right-0 h-[2px] bg-white/10 cursor-pointer group/progress z-30 overflow-hidden"
-              ref={progressBarRef}
-              onClick={handleProgressClick}
-            >
-              <div
-                className="h-full bg-white/50 group-hover/progress:bg-[#fa586a] rounded-full transition-colors relative"
-                style={{ width: `${progressPercent}%` }}
-              >
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white opacity-0 group-hover/progress:opacity-100 transition-opacity" />
-              </div>
-            </div>
+            {/* Isolated Progress Bar Component */}
+            <ProgressBar />
           </div>
         ) : (
           <div className="flex items-center gap-2 text-[12px] font-semibold text-zinc-500 uppercase tracking-widest select-none">
@@ -260,8 +294,8 @@ export const PlayerBar: React.FC = () => {
 
         {/* Synced Lyrics Toggle Button */}
         <button
-          onClick={(e) => { e.stopPropagation(); setShowLyrics(!showLyrics); }}
-          className="p-1 transition-all cursor-pointer"
+          onClick={toggleLyrics}
+          className="p-1 transition-colors duration-150 cursor-pointer"
           title="Toggle Lyrics"
         >
           <svg
@@ -270,7 +304,7 @@ export const PlayerBar: React.FC = () => {
             height="19"
             viewBox="0 0 18 18"
             fill="currentColor"
-            className={`transition-all ${showLyrics ? 'text-[#fa233c] drop-shadow-[0_0_8px_rgba(250,35,60,0.6)]' : 'text-zinc-500 hover:text-white'}`}
+            className={`transition-colors duration-150 ${showLyrics ? 'text-[#fa233c] drop-shadow-[0_0_8px_rgba(250,35,60,0.6)]' : 'text-zinc-500 hover:text-white'}`}
           >
             <path d="m9.67 13.982-2.43 2.474c-.472.471-.79.675-1.145.675-.479 0-.623-.314-.623-1.012v-2.137H5.26c-1.406 0-1.915-.146-2.429-.42a2.877 2.877 0 0 1-1.192-1.192c-.274-.514-.421-1.024-.421-2.429V6.464c0-1.405.147-1.915.421-2.428a2.872 2.872 0 0 1 1.192-1.192c.514-.275 1.023-.421 2.429-.421h7.68c1.406 0 1.915.146 2.429.421a2.86 2.86 0 0 1 1.192 1.192c.274.513.421 1.023.421 2.428v3.477c0 1.405-.147 1.915-.421 2.429a2.866 2.866 0 0 1-1.192 1.192c-.514.274-1.023.42-2.429.42H9.67Zm-.974-.957c.257-.261.608-.408.974-.408h3.27c1.076 0 1.426-.068 1.785-.26.276-.147.484-.356.631-.632.192-.358.26-.709.26-1.784V6.464c0-1.075-.068-1.426-.26-1.784a1.49 1.49 0 0 0-.631-.631c-.359-.192-.709-.26-1.785-.26H5.26c-1.075 0-1.425.068-1.785.26a1.5 1.5 0 0 0-.631.631c-.192.358-.26.709-.26 1.784v3.477c0 1.075.068 1.426.26 1.784.148.276.356.485.631.632.36.192.71.26 1.785.26h.212c.754 0 1.365.611 1.365 1.365v.934l1.859-1.891ZM5.422 8.01c0-.821.67-1.383 1.554-1.383.976 0 1.599.726 1.599 1.634 0 1.73-1.46 2.084-2.242 2.084-.222 0-.381-.148-.381-.329 0-.173.084-.294.372-.364.502-.12 1.005.028 1.274-.491h-.056c-.185.208-.483.242-.771.242-.837 0-1.349-.614-1.349-1.393Zm4.204 0c0-.821.669-1.383 1.553-1.383.976 0 1.6.726 1.6 1.634 0 1.73-1.46 2.084-2.242 2.084-.223 0-.381-.148-.381-.329 0-.173.084-.294.372-.364.502-.12 1.004.028 1.274-.491h-.056c-.186.208-.483.242-.772.242-.837 0-1.348-.614-1.348-1.393Z"></path>
           </svg>
@@ -278,9 +312,8 @@ export const PlayerBar: React.FC = () => {
 
         {/* Play Queue List Toggle Button */}
         <List
-          className={`w-[18px] h-[18px] cursor-pointer transition-colors ${showQueue ? 'text-[#fa233c] drop-shadow-[0_0_8px_rgba(250,35,60,0.6)]' : 'text-zinc-500 hover:text-white'
-            }`}
-          onClick={() => setShowQueue(!showQueue)}
+          className={`w-[18px] h-[18px] cursor-pointer transition-colors duration-150 ${showQueue ? 'text-[#fa233c] drop-shadow-[0_0_8px_rgba(250,35,60,0.6)]' : 'text-zinc-500 hover:text-white'}`}
+          onClick={toggleQueue}
         />
 
         {/* Dynamic Inline Volume Pill */}
@@ -297,3 +330,4 @@ export const PlayerBar: React.FC = () => {
     </div>
   )
 }
+export default PlayerBar

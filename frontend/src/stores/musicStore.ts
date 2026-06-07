@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { Song, Album, Playlist } from '../types/music'
+import { AlbumSummary } from '../services/libraryService'
 import * as PlayerService from '../services/playbackService'
 import * as LyricsService from '../services/lyricsService'
 
@@ -21,15 +22,19 @@ interface MusicState {
   showOriginal: boolean
   showTranslation: boolean
   lyrics: any[]
+  rawLyricsResult: LyricsService.LyricsResult | null
   volume: number
   isShuffle: boolean
   repeatMode: 'off' | 'all' | 'one'
   isMuted: boolean
   duration: number
   isMaximized: boolean
+  showFullscreenPlayer: boolean
   librarySongs: Song[]
+  libraryAlbums: AlbumSummary[]
   toggleFavorite: (songId: string) => void
   setIsMaximized: (maximized: boolean) => void
+  setShowFullscreenPlayer: (show: boolean) => void
   setCurrentTab: (tab: string) => void
   setSelectedAlbum: (album: Album | null) => void
   setSelectedPlaylist: (playlist: Playlist | null) => void
@@ -54,6 +59,8 @@ interface MusicState {
   handlePrevTrack: () => void
   fetchLyrics: (song: Song) => void
   setIsPlaying: (isPlaying: boolean) => void
+  clearPlayQueue: () => void
+  removeFromPlayQueue: (index: number) => void
 }
 
 export const useMusicStore = create<MusicState>((set, get) => ({
@@ -74,12 +81,14 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   showOriginal: true,
   showTranslation: false,
   lyrics: [],
+  rawLyricsResult: null,
   volume: 0.8,
   isShuffle: false,
   repeatMode: 'off',
   isMuted: false,
   duration: 0,
   isMaximized: false,
+  showFullscreenPlayer: false,
   librarySongs: [
     {
       id: "fav-1",
@@ -199,6 +208,7 @@ export const useMusicStore = create<MusicState>((set, get) => ({
       isFavorite: true
     }
   ],
+  libraryAlbums: [],
 
   toggleFavorite: (songId) => set((state) => {
     const updatedSongs = state.librarySongs.map(s => 
@@ -214,9 +224,10 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   }),
 
   setIsMaximized: (maximized) => set({ isMaximized: maximized }),
+  setShowFullscreenPlayer: (show) => set({ showFullscreenPlayer: show }),
   setCurrentTab: (tab) => set({ currentTab: tab, selectedAlbum: null, selectedPlaylist: null }),
-  setSelectedAlbum: (album) => set({ selectedAlbum: album, selectedPlaylist: null, currentTab: 'album-detail' }),
-  setSelectedPlaylist: (playlist) => set({ selectedPlaylist: playlist, selectedAlbum: null, currentTab: 'playlist-detail' }),
+  setSelectedAlbum: (album) => set((state) => ({ selectedAlbum: album, selectedPlaylist: null, currentTab: album ? 'album-detail' : 'albums' })),
+  setSelectedPlaylist: (playlist) => set((state) => ({ selectedPlaylist: playlist, selectedAlbum: null, currentTab: playlist ? 'playlist-detail' : 'playlists' })),
   setPlayingSong: (song) => set({ playingSong: song }),
   setShowAmbientGlow: (show) => {
     localStorage.setItem('aura-ambient-glow', String(show))
@@ -251,7 +262,8 @@ export const useMusicStore = create<MusicState>((set, get) => ({
       currentQueueIndex: idx !== -1 ? idx : 0,
       isPlaying: true,
       currentTime: 0,
-      lyrics: []
+      lyrics: [],
+      rawLyricsResult: null
     })
 
     // Fetch lyrics asynchronously after state update
@@ -278,12 +290,20 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   setDuration: (duration) => set({ duration }),
   setCurrentTime: (time) => set({ currentTime: time }),
   handlePlayPause: () => {
-    const { isPlaying, playingSong } = get()
+    const { isPlaying, playingSong, currentTime } = get()
     if (!playingSong) return
     if (isPlaying) {
       PlayerService.Pause().catch((err) => console.error(err))
     } else {
-      PlayerService.Resume().catch((err) => console.error(err))
+      if (currentTime === 0 && playingSong.filePath) {
+        PlayerService.SetVolume(get().volume).catch(() => {})
+        PlayerService.Play(playingSong.filePath).catch((err) => {
+          console.error('[PlaybackService] Failed to play from start:', err)
+        })
+        set({ isPlaying: true })
+      } else {
+        PlayerService.Resume().catch((err) => console.error(err))
+      }
     }
   },
   handleNextTrack: () => {
@@ -322,7 +342,8 @@ export const useMusicStore = create<MusicState>((set, get) => ({
       currentQueueIndex: nextIdx,
       currentTime: 0,
       isPlaying: true,
-      lyrics: []
+      lyrics: [],
+      rawLyricsResult: null
     })
     if (nextSong) get().fetchLyrics(nextSong)
   },
@@ -354,7 +375,8 @@ export const useMusicStore = create<MusicState>((set, get) => ({
       currentQueueIndex: prevIdx,
       currentTime: 0,
       isPlaying: true,
-      lyrics: []
+      lyrics: [],
+      rawLyricsResult: null
     })
     if (prevSong) get().fetchLyrics(prevSong)
   },
@@ -365,13 +387,28 @@ export const useMusicStore = create<MusicState>((set, get) => ({
         // Only apply if this song is still the playing song
         const current = get().playingSong
         if (current?.filePath === song.filePath) {
-          set({ lyrics: result?.lines || [] })
+          set({
+            lyrics: result?.lines || [],
+            rawLyricsResult: result
+          })
         }
       })
       .catch((err) => {
         console.error('[LyricsService] Failed to fetch lyrics:', err)
-        set({ lyrics: [] })
+        set({ lyrics: [], rawLyricsResult: null })
       })
   },
   setIsPlaying: (isPlaying) => set({ isPlaying }),
+  clearPlayQueue: () => {
+    PlayerService.Pause().catch(() => {})
+    set({ playQueue: [], currentQueueIndex: 0, playingSong: null, isPlaying: false, currentTime: 0 })
+  },
+  removeFromPlayQueue: (index) => set((state) => {
+    const newQueue = state.playQueue.filter((_, i) => i !== index)
+    // Adjust currentQueueIndex if needed
+    let newIndex = state.currentQueueIndex
+    if (index < state.currentQueueIndex) newIndex = state.currentQueueIndex - 1
+    else if (index === state.currentQueueIndex) newIndex = Math.min(newIndex, newQueue.length - 1)
+    return { playQueue: newQueue, currentQueueIndex: Math.max(0, newIndex) }
+  }),
 }))

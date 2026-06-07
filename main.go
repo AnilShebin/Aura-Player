@@ -61,8 +61,15 @@ func main() {
 	assetsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		if strings.HasPrefix(path, "/artwork/") {
-			// Serve artwork from ~/.aura/artwork/
 			fileName := strings.TrimPrefix(path, "/artwork/")
+			size := r.URL.Query().Get("size")
+			if size != "" {
+				thumbPath, err := library.GetThumbnailPath(artworkDir, fileName, size)
+				if err == nil {
+					http.ServeFile(w, r, thumbPath)
+					return
+				}
+			}
 			filePath := filepath.Join(artworkDir, fileName)
 			http.ServeFile(w, r, filePath)
 			return

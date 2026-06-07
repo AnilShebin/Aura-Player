@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useMusicStore } from '@/stores/musicStore'
+import { KaraokeView } from '@/features/lyrics/components/KaraokeView'
 
 interface LyricLine {
   time: number
@@ -17,10 +19,12 @@ interface SyncedLyricsProps {
   showLyrics?: boolean
   activeTrack: { title: string; artist: string; url?: string; artwork?: string }
   compact?: boolean
+  noHorizontalShift?: boolean
+  hideScrollbar?: boolean
 }
 
-const InstrumentalDots = React.memo(({ isVisible, opacity, compact }: { isVisible: boolean; opacity: number; compact: boolean }) => (
-  <motion.div 
+const InstrumentalDots = React.memo(({ isVisible, opacity, compact, isPlaying }: { isVisible: boolean; opacity: number; compact: boolean; isPlaying: boolean }) => (
+  <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: isVisible ? opacity : 0 }}
     transition={{ duration: 0.2 }}
@@ -30,12 +34,14 @@ const InstrumentalDots = React.memo(({ isVisible, opacity, compact }: { isVisibl
       <motion.div
         key={i}
         initial={{ opacity: 0.1, scale: 0.7 }}
-        animate={{ opacity: 1, scale: 1.1 }}
-        transition={{
-          duration: 0.9,
+        animate={isPlaying ? { opacity: [0.1, 1, 0.1], scale: [0.7, 1.1, 0.7] } : { opacity: 0.5, scale: 0.9 }}
+        transition={isPlaying ? {
+          duration: 1.8,
           repeat: Infinity,
-          repeatType: "reverse",
+          ease: "easeInOut",
           delay: i * 0.3
+        } : {
+          duration: 0.3
         }}
         className="w-2.5 h-2.5 rounded-full bg-foreground/60 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
       />
@@ -53,9 +59,14 @@ interface LyricLineItemProps {
   compact: boolean
   showOriginal: boolean
   showTranslation: boolean
+  isPlaying: boolean
   onSeek: (time: number) => void
   setRef: (el: HTMLDivElement | null) => void
   isSynced: boolean
+  index: number
+  totalLines: number
+  activeIdx: number
+  noHorizontalShift?: boolean
 }
 
 const LyricLineItem = React.memo<LyricLineItemProps>(({
@@ -67,14 +78,24 @@ const LyricLineItem = React.memo<LyricLineItemProps>(({
   compact,
   showOriginal,
   showTranslation,
+  isPlaying,
   onSeek,
   setRef,
-  isSynced
+  isSynced,
+  index,
+  totalLines,
+  activeIdx,
+  noHorizontalShift = false
 }) => {
   let opacity = 0.22
   let scale = 0.98
   let translateY = 0
   let translateX = 0
+
+  // If the active line is within the last 8 lines of the song, we are in the ending phase
+  // where the scroll container stops and "Written by" is fixed at the bottom.
+  const isEndingPhase = compact ? (activeIdx >= totalLines - 8) : false
+  const shouldHidePast = isPast && !isEndingPhase
 
   if (!isSynced) {
     opacity = 0.95
@@ -84,9 +105,10 @@ const LyricLineItem = React.memo<LyricLineItemProps>(({
   } else {
     if (isActive) {
       opacity = 1
-      scale = compact ? 1.02 : 1.05
-      translateX = compact ? 0 : 15
-    } else if (isPast) {
+      // noHorizontalShift: no scale change and no translate so the active line stays perfectly still
+      scale = noHorizontalShift ? 1 : (compact ? 1.02 : 1.05)
+      translateX = noHorizontalShift ? 0 : (compact ? 0 : 15)
+    } else if (shouldHidePast) {
       opacity = 0
       translateY = compact ? -10 : -20
       scale = line.isGap ? 0.7 : 0.95
@@ -99,7 +121,7 @@ const LyricLineItem = React.memo<LyricLineItemProps>(({
   return (
     <div
       ref={setRef}
-      className="relative w-full transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] origin-left"
+      className={`relative w-full transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${noHorizontalShift ? '' : 'origin-left'}`}
       style={{
         opacity,
         transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
@@ -108,7 +130,7 @@ const LyricLineItem = React.memo<LyricLineItemProps>(({
       onClick={isSynced ? () => onSeek(line.time) : undefined}
     >
       {line.isGap ? (
-        <InstrumentalDots isVisible={isActive || isManualScrolling || isFuture} opacity={isActive ? 1 : 0.15} compact={compact} />
+        <InstrumentalDots isVisible={isActive || isManualScrolling || isFuture} opacity={isActive ? 1 : 0.15} compact={compact} isPlaying={isPlaying} />
       ) : (
         <div className={`w-full text-left ${compact ? 'py-2.5' : 'pl-6 pr-12'}`}>
           <div className="primary-vocals">
@@ -131,16 +153,22 @@ const LyricLineItem = React.memo<LyricLineItemProps>(({
 })
 LyricLineItem.displayName = 'LyricLineItem'
 
-export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({ 
-  lyrics, 
-  currentTime, 
+export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
+  lyrics,
+  currentTime,
+  isPlaying,
   onSeek,
   showOriginal,
   showTranslation,
-  showLyrics,
+  showLyrics = false,
   activeTrack,
-  compact
+  compact = false,
+  noHorizontalShift = false,
+  hideScrollbar = false
 }) => {
+  const rawLyricsResult = useMusicStore(state => state.rawLyricsResult)
+
+
   const containerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<(HTMLDivElement | null)[]>([])
   const [isManualScrolling, setIsManualScrolling] = useState(false)
@@ -210,9 +238,9 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
 
   const activeIdx = isSynced
     ? processedLines.findIndex((line, i) => {
-        const nextLine = processedLines[i + 1]
-        return currentTime >= line.time && (!nextLine || currentTime < nextLine.time)
-      })
+      const nextLine = processedLines[i + 1]
+      return currentTime >= line.time && (!nextLine || currentTime < nextLine.time)
+    })
     : -1
 
   useEffect(() => {
@@ -222,7 +250,7 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
       if (element && container) {
         const offsetRatio = compact ? 0.15 : 0.5
         const targetScroll = element.offsetTop - container.offsetHeight * offsetRatio + element.offsetHeight / 2
-        
+
         isProgrammaticScroll.current = true
 
         const isNewSong = lastTitleRef.current !== activeTrack.title
@@ -253,6 +281,27 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
     if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
   }, [lyrics, activeTrack.title])
 
+  if (rawLyricsResult?.hasTTML && rawLyricsResult.raw) {
+    return (
+      <KaraokeView
+        rawTTML={rawLyricsResult.raw}
+        currentTime={currentTime}
+        isPlaying={isPlaying}
+        onSeek={onSeek}
+        showLyrics={showLyrics}
+        activeTrack={{
+          title: activeTrack.title,
+          artist: activeTrack.artist,
+          artwork: activeTrack.artwork || ''
+        }}
+        compact={compact}
+        hideScrollbar={hideScrollbar}
+        noHorizontalShift={noHorizontalShift}
+      />
+    )
+  }
+
+
   const handleScroll = () => {
     if (isProgrammaticScroll.current) return
     if (Date.now() - lastProgrammaticScrollTime.current < 500) return
@@ -266,7 +315,7 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
 
     if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
     if (!isManualScrolling) setIsManualScrolling(true)
-    
+
     scrollTimeout.current = setTimeout(() => {
       setIsManualScrolling(false)
     }, 2500)
@@ -291,12 +340,12 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       onScroll={handleScroll}
       onWheel={handleInteraction}
       onTouchStart={handleInteraction}
-      className={`relative w-full h-full overflow-y-auto custom-scrollbar select-none ${isScrolling ? 'is-scrolling' : ''} ${compact ? 'px-8' : 'px-6 md:px-10 lg:px-12'}`}
+      className={`relative w-full h-full overflow-y-auto overflow-x-hidden select-none ${hideScrollbar ? 'scrollbar-hidden' : `custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} ${compact ? 'px-8' : 'px-6 md:px-10 lg:px-12'}`}
       style={{
         maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
         WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
@@ -310,7 +359,7 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
           const isActive = activeIdx === i
           const isPast = activeIdx > i
           const isFuture = !isActive && !isPast
-          
+
           return (
             <LyricLineItem
               key={`${i}-${line.time}`}
@@ -322,25 +371,32 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
               compact={compact ?? false}
               showOriginal={showOriginal}
               showTranslation={showTranslation}
+              isPlaying={isPlaying}
               onSeek={(time) => {
                 onSeek(time)
                 setIsManualScrolling(false)
               }}
               setRef={el => { lineRefs.current[i] = el }}
               isSynced={isSynced}
+              index={i}
+              totalLines={processedLines.length}
+              activeIdx={activeIdx}
+              noHorizontalShift={noHorizontalShift}
             />
           )
         })}
       </div>
 
-      <div className={`w-full border-t border-border/40 ${compact ? 'mt-8 mb-8 pt-4' : 'mt-20 mb-20 pl-6 pt-12'}`}>
-         <div className="flex gap-1.5 items-baseline mb-1">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Written by:</span>
-            <span className={`font-normal text-foreground/85 leading-tight ${compact ? 'text-[14px]' : 'text-[18px]'}`}>{activeTrack.artist}</span>
-         </div>
+      {/* Credits block is contiguous with the lyrics list, separated by standard margins */}
+      <div className={`w-full border-t border-border/40 ${compact ? 'mt-8 pb-10 pt-4' : 'mt-20 pb-20 pl-6 pt-12'}`}>
+        <div className="flex gap-1.5 items-baseline mb-1">
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Written by:</span>
+          <span className={`font-normal text-foreground/85 leading-tight ${compact ? 'text-[14px]' : 'text-[18px]'}`}>{activeTrack.artist}</span>
+        </div>
       </div>
 
-      <div style={{ height: compact ? '70vh' : '35vh' }} />
+      {/* Spacer to allow centering the last lines of the song */}
+      <div style={{ height: compact ? '15vh' : '50vh' }} />
     </div>
   )
 }

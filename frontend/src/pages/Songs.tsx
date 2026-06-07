@@ -1,27 +1,37 @@
-import React, { useState, useMemo } from 'react'
-import { MoreHorizontal, ArrowUp, ArrowDown, Music } from 'lucide-react'
+import React, { useState, useMemo, useRef, useCallback } from 'react'
+import { ArrowUp, ArrowDown, Music } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import { ToggleFavorite } from '@/services/libraryService'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { SongRow } from '@/components/songs/SongRow'
+import { useSmoothScroll } from '@/hooks/useSmoothScroll'
 
 type SortField = 'title' | 'duration' | 'artist' | 'albumTitle' | 'genre' | 'plays' | 'none'
 type SortOrder = 'asc' | 'desc'
 
 export const Songs: React.FC = () => {
-  const { playSongDirect, playingSong, librarySongs, toggleFavorite: storeToggleFavorite } = useMusicStore()
+  // Broad subscriptions replaced with targeted selectors to avoid ticks/progress updates re-rendering
+  const playSongDirect = useMusicStore(state => state.playSongDirect)
+  const playingSongId = useMusicStore(state => state.playingSong?.id)
+  const librarySongs = useMusicStore(state => state.librarySongs)
+  const storeToggleFavorite = useMusicStore(state => state.toggleFavorite)
 
-  const [sortField, setSortField] = useState<SortField>('artist') // Default sort is Artist in design reference
+  const [sortField, setSortField] = useState<SortField>('artist') // Default sort is Artist
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')   // Default is Ascending
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortOrder('asc')
-    }
-  }
+  const handleSort = useCallback((field: SortField) => {
+    setSortField(prevField => {
+      if (prevField === field) {
+        setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc')
+        return prevField
+      } else {
+        setSortOrder('asc')
+        return field
+      }
+    })
+  }, [])
 
-  const handleToggleFavorite = async (songId: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = useCallback(async (songId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
       await ToggleFavorite(songId)
@@ -29,15 +39,14 @@ export const Songs: React.FC = () => {
     } catch (err) {
       console.error('Failed to toggle favorite:', err)
     }
-  }
+  }, [storeToggleFavorite])
 
-  // Sorted list memo
+  // Sorted list memoized to prevent sorting on every scroll or unrelated render
   const sortedSongs = useMemo(() => {
     const list = [...librarySongs]
     if (sortField === 'none') return list
 
     return list.sort((a, b) => {
-      // Safe access
       let valA = (a as any)[sortField] || ''
       let valB = (b as any)[sortField] || ''
 
@@ -52,9 +61,9 @@ export const Songs: React.FC = () => {
     })
   }, [librarySongs, sortField, sortOrder])
 
-  const handlePlaySong = (song: any) => {
+  const handlePlaySong = useCallback((song: any) => {
     playSongDirect(song, sortedSongs)
-  }
+  }, [playSongDirect, sortedSongs])
 
   const renderSortIndicator = (field: SortField) => {
     if (sortField !== field) return null
@@ -64,6 +73,17 @@ export const Songs: React.FC = () => {
       <ArrowDown size={11} className="inline ml-1 text-primary shrink-0" />
     )
   }
+
+  // Virtualizer parent ref and setup
+  const parentRef = useRef<HTMLDivElement>(null)
+  useSmoothScroll(parentRef)
+
+  const rowVirtualizer = useVirtualizer({
+    count: sortedSongs.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 40, // height of row in pixels
+    overscan: 30,           // load extra items off-screen for seamless scrolling
+  })
 
   if (librarySongs.length === 0) {
     return (
@@ -81,7 +101,6 @@ export const Songs: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col gap-4 pt-6 pb-0 select-none overflow-hidden">
-
       {/* Title Header */}
       <div className="flex flex-col mb-1 shrink-0">
         <h1 className="text-[28px] md:text-[34px] font-extrabold text-white tracking-tight leading-none">
@@ -92,29 +111,21 @@ export const Songs: React.FC = () => {
       {/* Songs Table Section */}
       <div className="w-full flex-1 flex flex-col overflow-x-auto overflow-y-hidden custom-scrollbar border-t border-white/[0.06]">
         <div className="min-w-[760px] flex-1 flex flex-col text-[12px] overflow-hidden">
-
+          
           {/* Table Header Row */}
           <div className="flex items-center text-zinc-400 font-semibold py-2.5 px-3 border-b border-white/[0.06] bg-transparent shrink-0">
             {/* Title */}
             <div
               onClick={() => handleSort('title')}
-              className="w-[35%] flex items-center cursor-pointer hover:text-white transition-colors"
+              className="w-[45%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
             >
               Title {renderSortIndicator('title')}
-            </div>
-
-            {/* Time */}
-            <div
-              onClick={() => handleSort('duration')}
-              className="w-[10%] flex items-center cursor-pointer hover:text-white transition-colors"
-            >
-              Time {renderSortIndicator('duration')}
             </div>
 
             {/* Artist */}
             <div
               onClick={() => handleSort('artist')}
-              className="w-[25%] flex items-center cursor-pointer hover:text-white transition-colors"
+              className="w-[28%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
             >
               Artist {renderSortIndicator('artist')}
             </div>
@@ -122,7 +133,7 @@ export const Songs: React.FC = () => {
             {/* Album */}
             <div
               onClick={() => handleSort('albumTitle')}
-              className="w-[23%] flex items-center cursor-pointer hover:text-white transition-colors"
+              className="w-[23%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
             >
               Album {renderSortIndicator('albumTitle')}
             </div>
@@ -131,76 +142,49 @@ export const Songs: React.FC = () => {
             <div className="w-[4%] flex justify-center text-center">
               ★
             </div>
-
-            {/* Plays */}
-            <div className="w-[3%] flex items-center justify-end text-right">
-              Plays
-            </div>
           </div>
 
-          {/* Table Data Rows */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col divide-y divide-white/[0.03] pb-28">
-            {sortedSongs.map((song) => {
-              const isCurrentPlaying = playingSong?.id === song.id
+          {/* Table Data Rows (Virtualized) */}
+          <div
+            ref={parentRef}
+            className="flex-1 overflow-y-auto custom-scrollbar relative pb-28"
+          >
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                const song = sortedSongs[virtualItem.index]
+                const isCurrentPlaying = playingSongId === song.id
 
-              return (
-                <div
-                  key={song.id}
-                  onClick={() => handlePlaySong(song)}
-                  className="flex items-center text-zinc-300 py-2.5 px-3 hover:bg-white/[0.04] group cursor-pointer transition-colors duration-150"
-                >
-                  {/* Song Title */}
-                  <div className="w-[35%] pr-4 flex items-center justify-between min-w-0">
-                    <span className={`text-[13px] font-medium truncate ${isCurrentPlaying ? 'text-[#fa586a]' : 'text-white'}`}>
-                      {song.title}
-                    </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation() }}
-                      className="opacity-0 group-hover:opacity-100 text-[#fa586a] hover:opacity-80 p-0.5 transition-all shrink-0 ml-2 cursor-pointer"
-                    >
-                      <MoreHorizontal size={14} className="stroke-[2.5]" />
-                    </button>
+                return (
+                  <div
+                    key={song.id}
+                    className="absolute top-0 left-0 w-full"
+                    style={{
+                      height: `${virtualItem.size}px`,
+                      transform: `translate3d(0, ${virtualItem.start}px, 0)`,
+                    }}
+                  >
+                    <SongRow
+                      song={song}
+                      isCurrentPlaying={isCurrentPlaying}
+                      onPlay={handlePlaySong}
+                      onToggleFavorite={handleToggleFavorite}
+                    />
                   </div>
-
-                  {/* Time / Duration */}
-                  <div className="w-[10%] text-[13px] text-zinc-400 font-light truncate">
-                    {song.duration}
-                  </div>
-
-                  {/* Artist */}
-                  <div className="w-[25%] pr-4 text-[13px] text-zinc-400 font-light truncate">
-                    {song.artist}
-                  </div>
-
-                  {/* Album */}
-                  <div className="w-[23%] pr-4 text-[13px] text-zinc-400 font-light truncate">
-                    {song.albumTitle}
-                  </div>
-
-                  {/* Favorite Star */}
-                  <div className="w-[4%] flex justify-center text-center">
-                    <button
-                      onClick={(e) => handleToggleFavorite(song.id, e)}
-                      className={`text-[13px] hover:scale-110 transition-transform ${song.isFavorite ? 'text-[#fa586a]' : 'text-zinc-600/40 hover:text-[#fa586a]/40'} cursor-pointer`}
-                    >
-                      ★
-                    </button>
-                  </div>
-
-                  {/* Plays Count */}
-                  <div className="w-[3%] text-[13px] text-zinc-400 font-light text-right pr-1">
-                    {(song.plays ?? 0) > 0 ? song.plays : ''}
-                  </div>
-
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
 
         </div>
       </div>
-
     </div>
   )
 }
+
 export default Songs

@@ -5,6 +5,7 @@ export interface LyricsResult {
     synced: boolean;
     lines: LyricLine[];
     raw: string;
+    hasTTML?: boolean;
 }
 
 export interface LyricLine {

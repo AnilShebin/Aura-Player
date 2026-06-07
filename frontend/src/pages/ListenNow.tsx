@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { Play, ChevronRight, MoreHorizontal, Disc } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 
@@ -53,11 +53,14 @@ const getRecentlyPlayedSongs = (albumId: string, albumTitle: string, artist: str
 }
 
 export const ListenNow: React.FC = () => {
-  const { playSongDirect, setSelectedAlbum, librarySongs } = useMusicStore()
+  const playSongDirect = useMusicStore(state => state.playSongDirect)
+  const setSelectedAlbum = useMusicStore(state => state.setSelectedAlbum)
+  const librarySongs = useMusicStore(state => state.librarySongs)
+  const libraryAlbums = useMusicStore(state => state.libraryAlbums)
 
   // Compute recently played albums based on scanned library, falling back to mock details if empty
   const recentlyPlayedAlbums = useMemo(() => {
-    if (!librarySongs || librarySongs.length === 0) {
+    if (!libraryAlbums || libraryAlbums.length === 0) {
       return RECENTLY_PLAYED.map(item => ({
         ...item,
         year: '2024',
@@ -66,27 +69,18 @@ export const ListenNow: React.FC = () => {
       }))
     }
 
-    const albumMap = new Map<string, any>()
-    librarySongs.forEach(song => {
-      const albumId = song.albumId || 'unknown-album'
-      if (!albumMap.has(albumId)) {
-        albumMap.set(albumId, {
-          id: albumId,
-          title: song.albumTitle || 'Unknown Album',
-          artist: song.artist || 'Unknown Artist',
-          coverUrl: song.coverUrl || '',
-          year: '2026',
-          genre: 'Local Audio',
-          songs: []
-        })
-      }
-      albumMap.get(albumId)!.songs.push(song)
-    })
+    return libraryAlbums.map(album => ({
+      id: album.id,
+      title: album.title,
+      artist: album.albumArtist || 'Unknown Artist',
+      coverUrl: album.coverUrl || '',
+      year: album.year || '2026',
+      genre: album.genre || 'Local Audio',
+      songs: album.songs || []
+    })).slice(0, 5)
+  }, [libraryAlbums])
 
-    return Array.from(albumMap.values()).slice(0, 5)
-  }, [librarySongs])
-
-  const handlePlayCollection = (title: string) => {
+  const handlePlayCollection = useCallback((title: string) => {
     if (title === "Recently Played" && recentlyPlayedAlbums.length > 0) {
       const firstAlbum = recentlyPlayedAlbums[0]
       if (firstAlbum.songs && firstAlbum.songs.length > 0) {
@@ -108,9 +102,9 @@ export const ListenNow: React.FC = () => {
       playlists: []
     }))
     playSongDirect(queue[0], queue)
-  }
+  }, [librarySongs, recentlyPlayedAlbums, playSongDirect])
 
-  const handleCardClick = (album: any) => {
+  const handleCardClick = useCallback((album: any) => {
     setSelectedAlbum({
       id: album.id,
       title: album.title,
@@ -118,15 +112,17 @@ export const ListenNow: React.FC = () => {
       coverUrl: album.coverUrl,
       year: album.year || '2026',
       genre: album.genre || 'Local Audio',
-      songs: album.songs
+      songs: album.songs,
+      codec: album.codec || 'Unknown',
+      quality: album.quality || 'High Quality'
     })
-  }
+  }, [setSelectedAlbum])
 
-  const handlePlayAlbumDirect = (album: any) => {
+  const handlePlayAlbumDirect = useCallback((album: any) => {
     if (album.songs && album.songs.length > 0) {
       playSongDirect(album.songs[0], album.songs)
     }
-  }
+  }, [playSongDirect])
 
   return (
     <div className="w-full flex flex-col gap-10 py-6 pb-28 select-none">
@@ -145,7 +141,8 @@ export const ListenNow: React.FC = () => {
           {/* Card 1: Heavy Rotation */}
           <div
             onClick={() => handlePlayCollection("Heavy Rotation")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#fa7c30] to-[#fa586a] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300"
+            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#fa7c30] to-[#fa586a] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 transform-gpu"
+            style={{ contain: 'layout style paint' }}
           >
             <div className="flex justify-end text-white/90 text-xs font-semibold select-none">
                Music
@@ -167,7 +164,7 @@ export const ListenNow: React.FC = () => {
               </p>
             </div>
 
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 active:scale-95 z-20">
+            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 active:scale-95 z-20">
               <Play size={20} fill="currentColor" className="ml-0.5" />
             </div>
           </div>
@@ -175,10 +172,11 @@ export const ListenNow: React.FC = () => {
           {/* Card 2: Valiant */}
           <div
             onClick={() => handlePlayCollection("Valiant")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-[#121212] border border-white/5 p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300"
+            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-[#121212] border border-white/5 p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 transform-gpu"
+            style={{ contain: 'layout style paint' }}
           >
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-45 transition-transform duration-700"
+              className="absolute inset-0 bg-cover bg-center opacity-45"
               style={{ backgroundImage: `url('https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&h=800&fit=crop')` }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/10" />
@@ -204,7 +202,7 @@ export const ListenNow: React.FC = () => {
               <p className="text-[11px] text-zinc-400 leading-none mt-1">Ilaiyaraaja</p>
             </div>
 
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 active:scale-95 z-20">
+            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 active:scale-95 z-20">
               <Play size={20} fill="currentColor" className="ml-0.5" />
             </div>
           </div>
@@ -212,21 +210,22 @@ export const ListenNow: React.FC = () => {
           {/* Card 3: Anirudh Feature Station */}
           <div
             onClick={() => handlePlayCollection("Featuring Anirudh")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#e57a00] to-[#b83a00] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300"
+            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#e57a00] to-[#b83a00] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 transform-gpu"
+            style={{ contain: 'layout style paint' }}
           >
             <div className="flex justify-end text-white/90 text-xs font-semibold select-none">
                Music
             </div>
 
             <div className="my-auto relative w-36 h-28 mx-auto z-10 flex items-center justify-center">
-              <div className="absolute left-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg transition-transform duration-300">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop" className="object-cover w-full h-full" />
+              <div className="absolute left-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop" className="object-cover w-full h-full" loading="lazy" />
               </div>
-              <div className="absolute right-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg transition-transform duration-300">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop" className="object-cover w-full h-full" />
+              <div className="absolute right-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop" className="object-cover w-full h-full" loading="lazy" />
               </div>
-              <div className="absolute top-0 w-16 h-16 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg transition-transform duration-300">
-                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop" className="object-cover w-full h-full" />
+              <div className="absolute top-0 w-16 h-16 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
+                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop" className="object-cover w-full h-full" loading="lazy" />
               </div>
             </div>
 
@@ -237,7 +236,7 @@ export const ListenNow: React.FC = () => {
               </p>
             </div>
 
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
+            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               <Play size={20} fill="currentColor" className="ml-0.5" />
             </div>
           </div>
@@ -245,7 +244,8 @@ export const ListenNow: React.FC = () => {
           {/* Card 4: Station */}
           <div
             onClick={() => handlePlayCollection("Anil Shebin's Station")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#e52d80] to-[#b21c45] p-6 flex flex-col justify-between cursor-pointer shadow-lg transition-all duration-300"
+            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#e52d80] to-[#b21c45] p-6 flex flex-col justify-between cursor-pointer shadow-lg transition-shadow duration-300 transform-gpu"
+            style={{ contain: 'layout style paint' }}
           >
             <div className="flex justify-end text-white/90 text-xs font-semibold select-none">
                Music
@@ -265,7 +265,7 @@ export const ListenNow: React.FC = () => {
               </p>
             </div>
 
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
+            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               <Play size={20} fill="currentColor" className="ml-0.5" />
             </div>
           </div>
@@ -279,10 +279,10 @@ export const ListenNow: React.FC = () => {
           onClick={() => handlePlayCollection("Recently Played")}
           className="flex items-center gap-1 group cursor-pointer w-fit"
         >
-          <h2 className="text-[20px] font-bold text-white tracking-tight group-hover:text-white transition-colors">
+          <h2 className="text-[20px] font-bold text-white tracking-tight group-hover:text-white transition-colors duration-150">
             Recently Played
           </h2>
-          <ChevronRight size={22} className="text-zinc-500 group-hover:text-white transition-colors mt-0.5" />
+          <ChevronRight size={22} className="text-zinc-500 group-hover:text-white transition-colors duration-150 mt-0.5" />
         </div>
 
         {/* Square Album Grid — Enforced exactly 5 in a line */}
@@ -291,14 +291,16 @@ export const ListenNow: React.FC = () => {
             <div
               key={album.id}
               onClick={() => handleCardClick(album)}
-              className="flex flex-col group cursor-pointer"
+              className="flex flex-col group cursor-pointer transform-gpu"
+              style={{ contain: 'layout style paint' }}
             >
-              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/[0.06] shadow-md transition-all duration-300 group-hover:shadow-xl">
+              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/[0.06] shadow-md transition-shadow duration-300 group-hover:shadow-xl">
                 {album.coverUrl ? (
                   <img
                     src={album.coverUrl}
                     alt={album.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
@@ -313,7 +315,7 @@ export const ListenNow: React.FC = () => {
                       e.stopPropagation()
                       handlePlayAlbumDirect(album)
                     }}
-                    className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
                   >
                     <Play size={14} fill="white" className="ml-0.5 text-white" />
                   </button>
@@ -322,7 +324,7 @@ export const ListenNow: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation()
                     }}
-                    className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
                   >
                     <MoreHorizontal size={16} />
                   </button>
@@ -330,7 +332,7 @@ export const ListenNow: React.FC = () => {
               </div>
 
               <div className="flex flex-col mt-2.5 min-w-0">
-                <span className="text-[12px] font-bold text-zinc-100 truncate block leading-snug group-hover:text-white">
+                <span className="text-[12px] font-bold text-zinc-100 truncate block leading-snug group-hover:text-white transition-colors duration-150">
                   {album.title}
                 </span>
                 <span className="text-[10.5px] text-zinc-400 font-light truncate mt-0.5 leading-snug">

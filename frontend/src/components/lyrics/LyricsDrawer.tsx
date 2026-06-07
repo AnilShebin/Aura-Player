@@ -1,24 +1,39 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { SyncedLyrics } from './SyncedLyrics'
 
 export const LyricsDrawer: React.FC = () => {
-  const {
-    showLyrics,
-    playingSong,
-    currentTime,
-    isPlaying,
-    seekSong,
-    showOriginal,
-    showTranslation,
-    setShowTranslation,
-    lyrics,
-    isMaximized,
-  } = useMusicStore()
+  const showLyrics = useMusicStore(state => state.showLyrics)
+  const playingSong = useMusicStore(state => state.playingSong)
+  const currentTime = useMusicStore(state => state.currentTime)
+  const isPlaying = useMusicStore(state => state.isPlaying)
+  const seekSong = useMusicStore(state => state.seekSong)
+  const showOriginal = useMusicStore(state => state.showOriginal)
+  const showTranslation = useMusicStore(state => state.showTranslation)
+  const setShowTranslation = useMusicStore(state => state.setShowTranslation)
+  const lyrics = useMusicStore(state => state.lyrics)
+  const isMaximized = useMusicStore(state => state.isMaximized)
 
   // Derived: does this song have bilingual lyrics?
-  const hasTranslations = lyrics.some((l: any) => l.is_translation === true)
+  const hasTranslations = React.useMemo(() => lyrics.some((l: any) => l.is_translation === true), [lyrics])
+
+  const handleToggleTranslation = useCallback(() => {
+    setShowTranslation(!showTranslation)
+  }, [showTranslation, setShowTranslation])
+
+  const handleSeek = useCallback((time: number) => {
+    seekSong(time)
+  }, [seekSong])
+
+  const activeTrack = React.useMemo(() => {
+    if (!playingSong) return null
+    return {
+      title: playingSong.title,
+      artist: playingSong.artist,
+      artwork: playingSong.coverUrl
+    }
+  }, [playingSong])
 
   return (
     <motion.div
@@ -28,14 +43,14 @@ export const LyricsDrawer: React.FC = () => {
       className={`${isMaximized ? 'relative' : 'absolute'} right-0 ${isMaximized ? 'right-auto' : ''} top-0 ${isMaximized ? 'top-auto' : ''} bottom-0 ${isMaximized ? 'bottom-auto' : ''} z-20 h-full overflow-hidden ${isMaximized ? 'bg-transparent' : 'bg-[#161616]/80 backdrop-blur-2xl'} ${isMaximized ? 'border-l-0' : 'border-l border-white/5'} shrink-0`}
       style={{ willChange: 'width' }}
     >
-      {/* Inner fixed-width content — stays 340px wide, hidden by parent overflow:hidden */}
+      {/* Inner fixed-width content — stays 300px wide, hidden by parent overflow:hidden */}
       <div className="w-[300px] h-full flex flex-col pb-[92px] relative z-10">
 
         {/* Translation Toggle Button — only shown for bilingual songs */}
         {hasTranslations && (
           <button
-            onClick={() => setShowTranslation(!showTranslation)}
-            className={`absolute bottom-[100px] right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${showTranslation
+            onClick={handleToggleTranslation}
+            className={`absolute bottom-[100px] right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200 cursor-pointer ${showTranslation
                 ? 'bg-secondary'
                 : 'bg-transparent hover:bg-secondary/50'
               }`}
@@ -55,23 +70,17 @@ export const LyricsDrawer: React.FC = () => {
         )}
 
         <div className="flex-1 overflow-hidden pt-3 pb-4">
-          {playingSong ? (
+          {playingSong && activeTrack ? (
             <SyncedLyrics
               lyrics={lyrics}
               currentTime={currentTime}
               isPlaying={isPlaying}
-              onSeek={(time) => {
-                seekSong(time)
-              }}
+              onSeek={handleSeek}
               showLyrics={showLyrics}
               showOriginal={showOriginal}
               showTranslation={showTranslation}
               compact={true}
-              activeTrack={{
-                title: playingSong.title,
-                artist: playingSong.artist,
-                artwork: playingSong.coverUrl
-              }}
+              activeTrack={activeTrack}
             />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center px-6">
@@ -86,3 +95,4 @@ export const LyricsDrawer: React.FC = () => {
     </motion.div>
   )
 }
+export default LyricsDrawer

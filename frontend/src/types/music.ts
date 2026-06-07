@@ -14,6 +14,15 @@ export interface Song {
   artwork?: string;
   isFavorite?: boolean;
   plays?: number;
+  albumArtist?: string;
+  year?: string;
+  genre?: string;
+  codec?: string;
+  quality?: string;
+  sampleRate?: number;
+  bitDepth?: number;
+  bitrate?: number;
+  copyright?: string;
 }
 
 export interface Album {
@@ -25,6 +34,11 @@ export interface Album {
   genre: string;
   songs: Song[];
   artwork?: string;
+  codec?: string;
+  quality?: string;
+  sampleRate?: number;
+  bitDepth?: number;
+  bitrate?: number;
 }
 
 export interface Playlist {

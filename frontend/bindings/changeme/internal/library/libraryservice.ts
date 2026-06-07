@@ -9,9 +9,21 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
+export function GetAlbums(): $CancellablePromise<$models.AlbumSummary[]> {
+    return $Call.ByID(2700323389).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
 export function GetSongs(): $CancellablePromise<$models.Song[]> {
     return $Call.ByID(848293877).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType3($result);
+    });
+}
+
+export function GetSongsByAlbum(albumID: string): $CancellablePromise<$models.Song[]> {
+    return $Call.ByID(3414178931, albumID).then(($result: any) => {
+        return $$createType3($result);
     });
 }
 
@@ -24,5 +36,7 @@ export function ToggleFavorite(songID: string): $CancellablePromise<boolean> {
 }
 
 // Private type creation functions
-const $$createType0 = $models.Song.createFrom;
+const $$createType0 = $models.AlbumSummary.createFrom;
 const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = $models.Song.createFrom;
+const $$createType3 = $Create.Array($$createType2);

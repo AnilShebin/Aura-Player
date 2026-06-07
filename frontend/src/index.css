@@ -160,8 +160,8 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -170,17 +170,28 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 100px;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 9999px;
   transition: background 0.3s;
 }
 
 .custom-scrollbar:hover::-webkit-scrollbar-thumb,
 .custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-hidden {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
 }
 
 /* Perfect Notch HUD Responsive Geometry classes */
@@ -272,35 +283,63 @@ button:focus-visible,
 
 /* Aura Logo Equalizer & Pulsing Aura glow animations */
 @keyframes eq-bar-1 {
-  0%, 100% { transform: scaleY(0.3); }
-  50% { transform: scaleY(0.9); }
+
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(0.9);
+  }
 }
+
 @keyframes eq-bar-2 {
-  0%, 100% { transform: scaleY(0.4); }
-  50% { transform: scaleY(1.0); }
+
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+
+  50% {
+    transform: scaleY(1.0);
+  }
 }
+
 @keyframes eq-bar-3 {
-  0%, 100% { transform: scaleY(0.25); }
-  50% { transform: scaleY(0.85); }
+
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+
+  50% {
+    transform: scaleY(0.85);
+  }
 }
 
 .animate-eq-1 {
   animation: eq-bar-1 0.8s ease-in-out infinite;
   transform-origin: 8.1px 14.5px;
 }
+
 .animate-eq-2 {
   animation: eq-bar-2 0.65s ease-in-out infinite;
   transform-origin: 10px 14.5px;
 }
+
 .animate-eq-3 {
   animation: eq-bar-3 0.72s ease-in-out infinite;
   transform-origin: 11.9px 14.5px;
 }
 
 @keyframes aura-glow-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.3)) drop-shadow(0 0 4px rgba(250, 88, 106, 0.1));
   }
+
   50% {
     filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.7)) drop-shadow(0 0 10px rgba(250, 88, 106, 0.4));
   }
@@ -311,12 +350,16 @@ button:focus-visible,
 }
 
 @keyframes ambient-slow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1) translate(0, 0);
   }
+
   33% {
     transform: scale(1.1) translate(15px, -10px);
   }
+
   66% {
     transform: scale(1.05) translate(-10px, 15px);
   }
@@ -325,4 +368,78 @@ button:focus-visible,
 .animate-ambient-slow {
   animation: ambient-slow 25s ease-in-out infinite;
   transform-origin: center;
+}
+
+/* Waveform / equalizer bar animation for currently-playing indicators */
+@keyframes musicbar {
+
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1.0);
+  }
+}
+
+/* Apple Music Instrumental Dots Animation */
+.instrumental-dots {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.instrumental-dots .dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--foreground, currentColor);
+  border-radius: 50%;
+  opacity: 0.22;
+  transform: scale(0.8);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Only animate when the parent line is active */
+.line-active-state-active .instrumental-dots .dot {
+  animation: bounce-dot-apple 1.4s infinite ease-in-out both;
+}
+
+.line-active-state-active .instrumental-dots .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.line-active-state-active .instrumental-dots .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.line-active-state-active .instrumental-dots .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce-dot-apple {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.22;
+  }
+
+  40% {
+    transform: scale(1.3);
+    opacity: 0.9;
+  }
+}
+
+/* Premium Smooth Karaoke Word Highlighting */
+.karaoke-word-gradient {
+  background-image: linear-gradient(to right,
+      var(--foreground) var(--gradient-progress, 0%),
+      color-mix(in srgb, var(--foreground) 22%, transparent) calc(var(--gradient-progress, 0%) + 15%));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  will-change: background-position, --gradient-progress;
 }

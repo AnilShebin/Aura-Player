@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.97
 	modernc.org/sqlite v1.51.0
 )
