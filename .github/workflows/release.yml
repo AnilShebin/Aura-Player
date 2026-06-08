@@ -98,6 +98,16 @@ jobs:
             $makensis = "C:\Program Files (x86)\NSIS\makensis.exe"
           }
           
+          # Download WebView2 bootstrapper if needed
+          if (Test-Path "build/windows/nsis/project.nsi") {
+            $webView2Url = "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
+            $webView2Path = "build/windows/nsis/MicrosoftEdgeWebview2Setup.exe"
+            if (-not (Test-Path $webView2Path)) {
+              Write-Host "Downloading WebView2 Bootstrapper..."
+              Invoke-WebRequest -Uri $webView2Url -OutFile $webView2Path
+            }
+          }
+
           # Package AMD64
           $binDirAmd64 = @(Resolve-Path "dist/aura-windows_windows_amd64*")[0].Path
           if (Test-Path "build/windows/nsis/project.nsi") {
