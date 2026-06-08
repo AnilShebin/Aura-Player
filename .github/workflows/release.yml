@@ -110,21 +110,23 @@ jobs:
 
           # Package AMD64
           $binDirAmd64 = @(Resolve-Path "dist/aura-windows_windows_amd64*")[0].Path
+          $binAmd64Path = Join-Path $binDirAmd64 "Aura-Music.exe"
           if (Test-Path "build/windows/nsis/project.nsi") {
             New-Item -ItemType Directory -Path "bin" -Force | Out-Null
-            & $makensis /DVERSION=$version /DARG_WAILS_AMD64_BINARY="$binDirAmd64/Aura-Music.exe" build/windows/nsis/project.nsi
+            & $makensis /DVERSION=$version /DARG_WAILS_AMD64_BINARY="$binAmd64Path" build/windows/nsis/project.nsi
             Move-Item "bin/Aura-Music-amd64-installer.exe" "dist/Aura-Setup-Windows-x64.exe" -ErrorAction SilentlyContinue
           }
-          Compress-Archive -Path "$binDirAmd64/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-x64.zip" -Force
+          Compress-Archive -Path "$binAmd64Path" -DestinationPath "dist/Aura-Setup-Windows-x64.zip" -Force
 
           # Package ARM64
           $binDirArm64 = @(Resolve-Path "dist/aura-windows_windows_arm64*")[0].Path
+          $binArm64Path = Join-Path $binDirArm64 "Aura-Music.exe"
           if (Test-Path "build/windows/nsis/project.nsi") {
             New-Item -ItemType Directory -Path "bin" -Force | Out-Null
-            & $makensis /DVERSION=$version /DARG_WAILS_ARM64_BINARY="$binDirArm64/Aura-Music.exe" build/windows/nsis/project.nsi
+            & $makensis /DVERSION=$version /DARG_WAILS_ARM64_BINARY="$binArm64Path" build/windows/nsis/project.nsi
             Move-Item "bin/Aura-Music-arm64-installer.exe" "dist/Aura-Setup-Windows-arm64.exe" -ErrorAction SilentlyContinue
           }
-          Compress-Archive -Path "$binDirArm64/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-arm64.zip" -Force
+          Compress-Archive -Path "$binArm64Path" -DestinationPath "dist/Aura-Setup-Windows-arm64.zip" -Force
 
       # Custom packaging for macOS DMGs (AMD64 & ARM64)
       - name: Package macOS DMGs
