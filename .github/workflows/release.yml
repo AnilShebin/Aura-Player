@@ -86,7 +86,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --skip=publish --config ${{ matrix.goreleaser_config }} --allow-dirty
+          args: release --clean --skip=publish --config ${{ matrix.goreleaser_config }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
