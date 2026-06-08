@@ -93,7 +93,7 @@ jobs:
           $version = "${{ github.ref_name }}".TrimStart("v")
           
           # Package AMD64
-          $binDirAmd64 = "dist/aura-windows_windows_amd64"
+          $binDirAmd64 = @(Resolve-Path "dist/aura-windows_windows_amd64*")[0].Path
           if (Test-Path "build/windows/nsis/project.nsi") {
             makensis /DVERSION=$version /DBIN_DIR=$binDirAmd64 build/windows/nsis/project.nsi
             Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-x64.exe" -ErrorAction SilentlyContinue
@@ -101,7 +101,7 @@ jobs:
           Compress-Archive -Path "$binDirAmd64/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-x64.zip" -Force
 
           # Package ARM64
-          $binDirArm64 = "dist/aura-windows_windows_arm64"
+          $binDirArm64 = @(Resolve-Path "dist/aura-windows_windows_arm64*")[0].Path
           if (Test-Path "build/windows/nsis/project.nsi") {
             makensis /DVERSION=$version /DBIN_DIR=$binDirArm64 build/windows/nsis/project.nsi
             Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-arm64.exe" -ErrorAction SilentlyContinue
@@ -112,10 +112,14 @@ jobs:
       - name: Package macOS DMGs
         if: matrix.goos == 'darwin'
         run: |
+          # Find compiled binary paths dynamically
+          bin_amd64=$(ls -d dist/aura-macos_darwin_amd64*/Aura-Music | head -n 1)
+          bin_arm64=$(ls -d dist/aura-macos_darwin_arm64*/Aura-Music | head -n 1)
+
           # Package AMD64
           mkdir -p dist/dmg-temp-amd64/Aura-Music.app/Contents/MacOS
           mkdir -p dist/dmg-temp-amd64/Aura-Music.app/Contents/Resources
-          cp "dist/aura-macos_darwin_amd64/Aura-Music" dist/dmg-temp-amd64/Aura-Music.app/Contents/MacOS/
+          cp "$bin_amd64" dist/dmg-temp-amd64/Aura-Music.app/Contents/MacOS/
           cp build/darwin/Info.plist dist/dmg-temp-amd64/Aura-Music.app/Contents/
           cp build/darwin/icons.icns dist/dmg-temp-amd64/Aura-Music.app/Contents/Resources/
           echo -n "APPL????" > dist/dmg-temp-amd64/Aura-Music.app/Contents/PkgInfo
@@ -133,7 +137,7 @@ jobs:
           # Package ARM64
           mkdir -p dist/dmg-temp-arm64/Aura-Music.app/Contents/MacOS
           mkdir -p dist/dmg-temp-arm64/Aura-Music.app/Contents/Resources
-          cp "dist/aura-macos_darwin_arm64/Aura-Music" dist/dmg-temp-arm64/Aura-Music.app/Contents/MacOS/
+          cp "$bin_arm64" dist/dmg-temp-arm64/Aura-Music.app/Contents/MacOS/
           cp build/darwin/Info.plist dist/dmg-temp-arm64/Aura-Music.app/Contents/
           cp build/darwin/icons.icns dist/dmg-temp-arm64/Aura-Music.app/Contents/Resources/
           echo -n "APPL????" > dist/dmg-temp-arm64/Aura-Music.app/Contents/PkgInfo
@@ -159,7 +163,9 @@ jobs:
           mkdir -p dist/AppDir/usr/share/applications
           mkdir -p dist/AppDir/usr/share/icons/hicolor/512x512/apps
           
-          cp "dist/aura-linux_linux_amd64/Aura-Music" dist/AppDir/usr/bin/Aura-Music
+          # Find compiled Linux binary path dynamically
+          bin_linux=$(ls -d dist/aura-linux_linux_amd64*/Aura-Music | head -n 1)
+          cp "$bin_linux" dist/AppDir/usr/bin/Aura-Music
           cp build/linux/desktop dist/AppDir/usr/share/applications/aura-music.desktop
           cp build/appicon.png dist/AppDir/usr/share/icons/hicolor/512x512/apps/aura-music.png || true
           
