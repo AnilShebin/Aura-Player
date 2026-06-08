@@ -92,10 +92,16 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           
+          # Find makensis executable path
+          $makensis = "makensis"
+          if (-not (Get-Command "makensis" -ErrorAction SilentlyContinue)) {
+            $makensis = "C:\Program Files (x86)\NSIS\makensis.exe"
+          }
+          
           # Package AMD64
           $binDirAmd64 = @(Resolve-Path "dist/aura-windows_windows_amd64*")[0].Path
           if (Test-Path "build/windows/nsis/project.nsi") {
-            makensis /DVERSION=$version /DBIN_DIR=$binDirAmd64 build/windows/nsis/project.nsi
+            & $makensis /DVERSION=$version /DBIN_DIR=$binDirAmd64 build/windows/nsis/project.nsi
             Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-x64.exe" -ErrorAction SilentlyContinue
           }
           Compress-Archive -Path "$binDirAmd64/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-x64.zip" -Force
@@ -103,7 +109,7 @@ jobs:
           # Package ARM64
           $binDirArm64 = @(Resolve-Path "dist/aura-windows_windows_arm64*")[0].Path
           if (Test-Path "build/windows/nsis/project.nsi") {
-            makensis /DVERSION=$version /DBIN_DIR=$binDirArm64 build/windows/nsis/project.nsi
+            & $makensis /DVERSION=$version /DBIN_DIR=$binDirArm64 build/windows/nsis/project.nsi
             Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-arm64.exe" -ErrorAction SilentlyContinue
           }
           Compress-Archive -Path "$binDirArm64/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-arm64.zip" -Force
