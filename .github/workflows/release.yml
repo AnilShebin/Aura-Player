@@ -17,19 +17,13 @@ jobs:
         include:
           - os: ubuntu-22.04
             goos: linux
-            goarch: amd64
+            goreleaser_id: aura-linux
           - os: macos-13
             goos: darwin
-            goarch: amd64
-          - os: macos-13
-            goos: darwin
-            goarch: arm64
+            goreleaser_id: aura-macos
           - os: windows-latest
             goos: windows
-            goarch: amd64
-          - os: windows-latest
-            goos: windows
-            goarch: arm64
+            goreleaser_id: aura-windows
 
     steps:
       - name: Checkout Code
@@ -75,43 +69,51 @@ jobs:
           npm install
           npm run build
 
-      # Run GoReleaser to compile and package binaries and debian packages
+      # Run GoReleaser to compile and package binaries and debian packages locally (without publish)
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --split --config .goreleaser.yml
+          args: release --clean --skip=publish --id ${{ matrix.goreleaser_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
 
-      # Custom packaging for installers (Windows Setup, macOS DMG, Linux AppImage)
-      - name: Package Windows Installer
+      # Custom packaging for Windows installers (AMD64 & ARM64)
+      - name: Package Windows Installers
         if: matrix.goos == 'windows'
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          $binDir = "dist/aura-windows_windows_${{ matrix.goarch }}"
+          
+          # Package AMD64
+          $binDirAmd64 = "dist/aura-windows_windows_amd64"
           if (Test-Path "build/windows/nsis/project.nsi") {
-            # Run NSIS packaging
-            makensis /DVERSION=$version /DBIN_DIR=$binDir build/windows/nsis/project.nsi
-            Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-${{ matrix.goarch }}.exe" -ErrorAction SilentlyContinue
+            makensis /DVERSION=$version /DBIN_DIR=$binDirAmd64 build/windows/nsis/project.nsi
+            Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-x64.exe" -ErrorAction SilentlyContinue
           }
-          # Always generate standard zip package as well
-          Compress-Archive -Path "$binDir/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-${{ matrix.goarch }}.zip" -Force
+          Compress-Archive -Path "$binDirAmd64/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-x64.zip" -Force
 
-      - name: Package macOS DMG
+          # Package ARM64
+          $binDirArm64 = "dist/aura-windows_windows_arm64"
+          if (Test-Path "build/windows/nsis/project.nsi") {
+            makensis /DVERSION=$version /DBIN_DIR=$binDirArm64 build/windows/nsis/project.nsi
+            Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-arm64.exe" -ErrorAction SilentlyContinue
+          }
+          Compress-Archive -Path "$binDirArm64/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-arm64.zip" -Force
+
+      # Custom packaging for macOS DMGs (AMD64 & ARM64)
+      - name: Package macOS DMGs
         if: matrix.goos == 'darwin'
         run: |
-          mkdir -p dist/dmg-temp/Aura-Music.app/Contents/MacOS
-          mkdir -p dist/dmg-temp/Aura-Music.app/Contents/Resources
-          
-          # Copy GoReleaser compiled binary and macOS bundle resources
-          cp "dist/aura-macos_darwin_${{ matrix.goarch }}/Aura-Music" dist/dmg-temp/Aura-Music.app/Contents/MacOS/
-          cp build/darwin/Info.plist dist/dmg-temp/Aura-Music.app/Contents/
-          cp build/darwin/icons.icns dist/dmg-temp/Aura-Music.app/Contents/Resources/
-          echo -n "APPL????" > dist/dmg-temp/Aura-Music.app/Contents/PkgInfo
+          # Package AMD64
+          mkdir -p dist/dmg-temp-amd64/Aura-Music.app/Contents/MacOS
+          mkdir -p dist/dmg-temp-amd64/Aura-Music.app/Contents/Resources
+          cp "dist/aura-macos_darwin_amd64/Aura-Music" dist/dmg-temp-amd64/Aura-Music.app/Contents/MacOS/
+          cp build/darwin/Info.plist dist/dmg-temp-amd64/Aura-Music.app/Contents/
+          cp build/darwin/icons.icns dist/dmg-temp-amd64/Aura-Music.app/Contents/Resources/
+          echo -n "APPL????" > dist/dmg-temp-amd64/Aura-Music.app/Contents/PkgInfo
           
           create-dmg \
             --volname "Aura Music" \
@@ -120,29 +122,44 @@ jobs:
             --icon-size 100 \
             --icon "Aura-Music.app" 175 120 \
             --app-drop-link 425 120 \
-            "dist/Aura-macOS-${{ matrix.goarch }}.dmg" \
-            dist/dmg-temp/
+            "dist/Aura-macOS-amd64.dmg" \
+            dist/dmg-temp-amd64/
 
+          # Package ARM64
+          mkdir -p dist/dmg-temp-arm64/Aura-Music.app/Contents/MacOS
+          mkdir -p dist/dmg-temp-arm64/Aura-Music.app/Contents/Resources
+          cp "dist/aura-macos_darwin_arm64/Aura-Music" dist/dmg-temp-arm64/Aura-Music.app/Contents/MacOS/
+          cp build/darwin/Info.plist dist/dmg-temp-arm64/Aura-Music.app/Contents/
+          cp build/darwin/icons.icns dist/dmg-temp-arm64/Aura-Music.app/Contents/Resources/
+          echo -n "APPL????" > dist/dmg-temp-arm64/Aura-Music.app/Contents/PkgInfo
+          
+          create-dmg \
+            --volname "Aura Music" \
+            --volicon "build/darwin/icons.icns" \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Aura-Music.app" 175 120 \
+            --app-drop-link 425 120 \
+            "dist/Aura-macOS-arm64.dmg" \
+            dist/dmg-temp-arm64/
+
+      # Custom packaging for Linux AppImage (AMD64)
       - name: Package Linux AppImage
         if: matrix.goos == 'linux'
         run: |
-          # Install linuxdeploy
           wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
           
-          # Create AppDir structure
           mkdir -p dist/AppDir/usr/bin
           mkdir -p dist/AppDir/usr/share/applications
           mkdir -p dist/AppDir/usr/share/icons/hicolor/512x512/apps
           
-          # Copy GoReleaser compiled binary, desktop shortcut, and application icon
-          cp "dist/aura-linux_linux_${{ matrix.goarch }}/Aura-Music" dist/AppDir/usr/bin/Aura-Music
+          cp "dist/aura-linux_linux_amd64/Aura-Music" dist/AppDir/usr/bin/Aura-Music
           cp build/linux/desktop dist/AppDir/usr/share/applications/aura-music.desktop
           cp build/appicon.png dist/AppDir/usr/share/icons/hicolor/512x512/apps/aura-music.png || true
           
-          # Generate AppImage
-          ARCH=${{ matrix.goarch == 'amd64' && 'x86_64' || 'aarch64' }} ./linuxdeploy-x86_64.AppImage --appdir dist/AppDir --output appimage
-          mv Aura-Music-*.AppImage dist/Aura-Linux-${{ matrix.goarch }}.AppImage
+          ARCH=x86_64 ./linuxdeploy-x86_64.AppImage --appdir dist/AppDir --output appimage
+          mv Aura-Music-*.AppImage dist/Aura-Linux-amd64.AppImage
 
       # Upload Packaged installers/bundles to GitHub Release
       - name: Upload Release Assets
