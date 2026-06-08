@@ -15,7 +15,7 @@ builds:
       - amd64
       - arm64
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -H=windowsgui -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
     dir: .
@@ -39,7 +39,6 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm64
     env:
       - CGO_ENABLED=1
     ldflags:
@@ -52,8 +51,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    files:
-      - none*
 
 nfpms:
   - id: debian-packages
@@ -73,7 +70,7 @@ nfpms:
     contents:
       - src: build/appicon.png
         dst: /usr/share/icons/hicolor/512x512/apps/aura-music.png
-      - src: build/linux/aura-music.desktop
+      - src: build/linux/desktop
         dst: /usr/share/applications/aura-music.desktop
 
 checksum:
