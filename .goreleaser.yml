@@ -1,0 +1,90 @@
+version: 2
+
+project_name: Aura-Music
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: aura-windows
+    binary: Aura-Music
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -H=windowsgui -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
+    dir: .
+
+  - id: aura-macos
+    binary: Aura-Music
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
+    dir: .
+
+  - id: aura-linux
+    binary: Aura-Music
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
+    dir: .
+
+archives:
+  - format: tar.gz
+    name_template: "Aura-{{ .Os }}-{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - none*
+
+nfpms:
+  - id: debian-packages
+    package_name: aura-music
+    file_name_template: "Aura-Linux-{{ .Arch }}"
+    builds:
+      - aura-linux
+    formats:
+      - deb
+    vendor: Aura Inc
+    homepage: https://github.com/AnilShebin/Aura-Player
+    maintainer: Anil Shebin <anils@users.noreply.github.com>
+    description: Lossless Music Player with TTML Karaoke support
+    license: MIT
+    section: sound
+    priority: optional
+    contents:
+      - src: build/appicon.png
+        dst: /usr/share/icons/hicolor/512x512/apps/aura-music.png
+      - src: build/linux/aura-music.desktop
+        dst: /usr/share/applications/aura-music.desktop
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^style:'
+      - 'chore'

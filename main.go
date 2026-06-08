@@ -13,6 +13,7 @@ import (
 	"changeme/internal/lyrics"
 	"changeme/internal/playback"
 	"changeme/internal/settings"
+	"changeme/internal/updater"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -102,6 +103,7 @@ func main() {
 			application.NewService(libraryService),
 			application.NewService(playbackService),
 			application.NewService(lyrics.NewLyricsService()),
+			application.NewService(updater.NewUpdaterService()),
 		},
 		Assets: application.AssetOptions{
 			Handler: assetsHandler,
@@ -116,12 +118,13 @@ func main() {
 
 	// Create a new window with the necessary options.
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:     "Aura Music",
-		Width:     1280,
-		Height:    850,
-		MinWidth:  1120,
-		MinHeight: 720,
-		Frameless: true,
+		Title:      "Aura Music",
+		Width:      1280,
+		Height:     850,
+		MinWidth:   1120,
+		MinHeight:  720,
+		Frameless:  true,
+		StartState: application.WindowStateMaximised,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,

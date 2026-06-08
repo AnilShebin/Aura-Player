@@ -14,6 +14,9 @@ import {
 import { AnimatePresence } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { VolumeControl } from './VolumeControl'
+import { LosslessIcon } from '@/components/icons/LosslessIcon'
+import { DolbyIcon } from '@/components/icons/DolbyIcon'
+import { SongContextMenu } from '@/components/songs/SongContextMenu'
 
 // Helper component for auto-scrolling text on hover if it overflows (infinite loop)
 const MarqueeText: React.FC<{ text: string; className?: string }> = React.memo(({ text, className }) => {
@@ -147,6 +150,7 @@ export const PlayerBar: React.FC = () => {
   const setShowFullscreenPlayer = useMusicStore(state => state.setShowFullscreenPlayer)
 
   const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false)
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null)
 
   const toggleShuffle = useCallback(() => setIsShuffle(!isShuffle), [isShuffle, setIsShuffle])
   const toggleRepeat = useCallback(() => {
@@ -163,6 +167,25 @@ export const PlayerBar: React.FC = () => {
   }, [showLyrics, setShowLyrics])
 
   const toggleQueue = useCallback(() => setShowQueue(!showQueue), [showQueue, setShowQueue])
+
+  const handleMenuClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    if (menuCoords) {
+      setMenuCoords(null)
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const menuWidth = 240
+      const menuHeight = 150 // Exact height of the offline-only player bar menu
+      let top = rect.bottom + window.scrollY + 4
+      if (rect.bottom + menuHeight > window.innerHeight) {
+        top = rect.top + window.scrollY - menuHeight - 4
+      }
+      setMenuCoords({
+        top,
+        left: rect.right - menuWidth + window.scrollX,
+      })
+    }
+  }, [menuCoords])
 
   return (
     <div
@@ -262,6 +285,12 @@ export const PlayerBar: React.FC = () => {
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 )}
+                {playingSong.quality?.toLowerCase().includes('lossless') && (
+                  <LosslessIcon className="fill-zinc-400 shrink-0 opacity-80" width={14} height={9} />
+                )}
+                {playingSong.quality?.toLowerCase().includes('dolby') && (
+                  <DolbyIcon className="fill-zinc-400 shrink-0 opacity-85" width={20} height={7} />
+                )}
               </div>
               <div className="pb-2 min-w-0 flex items-center">
                 <MarqueeText
@@ -273,18 +302,46 @@ export const PlayerBar: React.FC = () => {
 
             {/* More details button */}
             <button
+              onClick={handleMenuClick}
               className="p-1 hover:bg-white/10 rounded-full transition-colors duration-150 shrink-0 text-zinc-400 hover:text-white cursor-pointer ml-1 relative z-10"
               title="More Options"
             >
               <MoreHorizontal size={16} />
             </button>
 
+            {menuCoords && (
+              <SongContextMenu
+                song={playingSong}
+                coords={menuCoords}
+                onClose={() => setMenuCoords(null)}
+                isPlayerBar={true}
+              />
+            )}
+
             {/* Isolated Progress Bar Component */}
             <ProgressBar />
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-[12px] font-semibold text-zinc-500 uppercase tracking-widest select-none">
-            <span>Aura Music</span>
+          <div className="flex items-center gap-2.5 text-zinc-300 select-none">
+            <svg height="15" viewBox="0 0 32 32" width="15" xmlns="http://www.w3.org/2000/svg" className="shrink-0" aria-hidden="true">
+              <defs>
+                <linearGradient id="aura-playerbar-logo-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="60%" stopColor="#d1d1d6" />
+                  <stop offset="100%" stopColor="#8e8e93" />
+                </linearGradient>
+              </defs>
+              <g fill="url(#aura-playerbar-logo-grad)">
+                <rect x="2" y="16" width="2.4" height="12" rx="1.2" />
+                <rect x="6" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                <rect x="10" y="4.5" width="2.4" height="16" rx="1.2" />
+                <rect x="14" y="0" width="2.4" height="14" rx="1.2" />
+                <rect x="18" y="4.5" width="2.4" height="16" rx="1.2" />
+                <rect x="22" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                <rect x="26" y="16" width="2.4" height="12" rx="1.2" />
+              </g>
+            </svg>
+            <span className="text-[12px] font-bold uppercase tracking-[0.25em] text-white/95 mt-[1px]">AURA</span>
           </div>
         )}
       </div>

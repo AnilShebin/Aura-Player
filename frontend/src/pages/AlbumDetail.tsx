@@ -1,6 +1,10 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Play, Pause, Shuffle, Plus, MoreHorizontal, ChevronLeft } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
+import { LosslessIcon } from '@/components/icons/LosslessIcon'
+import { DolbyIcon } from '@/components/icons/DolbyIcon'
+import { SongContextMenu } from '@/components/songs/SongContextMenu'
+import { ToggleFavorite } from '@/services/libraryService'
 
 export const AlbumDetail: React.FC = () => {
   const selectedAlbum = useMusicStore(state => state.selectedAlbum)
@@ -8,8 +12,42 @@ export const AlbumDetail: React.FC = () => {
   const playingSongId = useMusicStore(state => state.playingSong?.id)
   const isPlaying = useMusicStore(state => state.isPlaying)
   const handlePlayPause = useMusicStore(state => state.handlePlayPause)
-
   const setSelectedAlbum = useMusicStore(state => state.setSelectedAlbum)
+  const storeToggleFavorite = useMusicStore(state => state.toggleFavorite)
+
+  const handleToggleFavorite = useCallback(async (songId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await ToggleFavorite(songId)
+      storeToggleFavorite(songId)
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err)
+    }
+  }, [storeToggleFavorite])
+  
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null)
+  const [activeSong, setActiveSong] = useState<any>(null)
+
+  const handleMenuClick = (e: React.MouseEvent<HTMLButtonElement>, song: any) => {
+    e.stopPropagation()
+    if (menuCoords && activeSong?.id === song.id) {
+      setMenuCoords(null)
+      setActiveSong(null)
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const menuWidth = 240
+      const menuHeight = 350
+      let top = rect.bottom + window.scrollY + 4
+      if (rect.bottom + menuHeight > window.innerHeight) {
+        top = rect.top + window.scrollY - menuHeight - 4
+      }
+      setMenuCoords({
+        top,
+        left: rect.right - menuWidth + window.scrollX,
+      })
+      setActiveSong(song)
+    }
+  }
 
   const handleBackClick = useCallback(() => {
     setSelectedAlbum(null)
@@ -109,9 +147,15 @@ export const AlbumDetail: React.FC = () => {
             
             {/* Quality badge and text */}
             <div className="flex items-center gap-1 font-normal text-zinc-300">
-              <svg viewBox="0 0 24 24" width="12" height="12" className="fill-zinc-300 shrink-0">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-              </svg>
+              {albumQuality.toLowerCase().includes('lossless') ? (
+                <LosslessIcon className="fill-zinc-300 shrink-0" width={16} height={10} />
+              ) : albumQuality.toLowerCase().includes('dolby') ? (
+                <DolbyIcon className="fill-zinc-300 shrink-0" width={22} height={8} />
+              ) : (
+                <svg viewBox="0 0 24 24" width="12" height="12" className="fill-zinc-300 shrink-0">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+              )}
               <span>{albumQuality}</span>
             </div>
           </div>
@@ -164,7 +208,7 @@ export const AlbumDetail: React.FC = () => {
                     playSongDirect(song, selectedAlbum.songs)
                   }
                 }}
-                className="grid grid-cols-[40px_1fr_60px_40px] gap-2 items-center px-3 py-2.5 rounded-lg hover:bg-white/[0.04] group cursor-pointer transition-colors duration-150 transform-gpu"
+                className="grid grid-cols-[40px_1fr_40px_60px_40px] gap-2 items-center px-3 py-2.5 rounded-lg hover:bg-white/[0.04] group cursor-pointer transition-colors duration-150 transform-gpu"
                 style={{ contain: 'layout style paint' }}
               >
                 {/* Unified indicator: number / waveform / pause / hover-play-pause */}
@@ -231,16 +275,37 @@ export const AlbumDetail: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Favorite Star */}
+                <div className="flex justify-center items-center w-full" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={(e) => handleToggleFavorite(song.id, e)}
+                    className={`text-[13px] w-6 h-6 flex items-center justify-center hover:scale-110 transition-transform duration-150 ${song.isFavorite ? 'text-[#fa586a]' : 'text-zinc-600/40 hover:text-[#fa586a]/40'} cursor-pointer`}
+                  >
+                    ★
+                  </button>
+                </div>
+
                 {/* Duration */}
                 <div className="text-[12px] text-zinc-400 font-light text-right pr-2">
                   {song.duration}
                 </div>
 
                 {/* Options three-dots */}
-                <div className="flex justify-end pr-1" onClick={(e) => e.stopPropagation()}>
-                  <button className="text-[#fa586a] hover:opacity-85 p-1 transition-opacity duration-150 cursor-pointer">
+                <div className="flex justify-center items-center w-full" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={(e) => handleMenuClick(e, song)}
+                    className="text-[#fa586a] hover:opacity-85 w-6 h-6 flex items-center justify-center transition-opacity duration-150 cursor-pointer"
+                  >
                     <MoreHorizontal size={16} />
                   </button>
+
+                  {menuCoords && activeSong?.id === song.id && (
+                    <SongContextMenu
+                      song={song}
+                      coords={menuCoords}
+                      onClose={() => { setMenuCoords(null); setActiveSong(null); }}
+                    />
+                  )}
                 </div>
               </div>
             )

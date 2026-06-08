@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { MoreHorizontal } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
+import { SongContextMenu } from './SongContextMenu'
 
 interface Song {
   id: string
@@ -26,12 +28,33 @@ export const SongRow: React.FC<SongRowProps> = React.memo(({
 }) => {
   const isPlaying = useMusicStore(state => state.isPlaying)
 
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null)
+
   const handleRowClick = () => {
     onPlay(song)
   }
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     onToggleFavorite(song.id, e)
+  }
+
+  const handleMenuClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    if (menuCoords) {
+      setMenuCoords(null)
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const menuWidth = 240 // updated menu width (w-60 = 240px)
+      const menuHeight = 350 // updated approximate height
+      let top = rect.bottom + window.scrollY + 4
+      if (rect.bottom + menuHeight > window.innerHeight) {
+        top = rect.top + window.scrollY - menuHeight - 4
+      }
+      setMenuCoords({
+        top,
+        left: rect.right - menuWidth + window.scrollX,
+      })
+    }
   }
 
   return (
@@ -44,7 +67,7 @@ export const SongRow: React.FC<SongRowProps> = React.memo(({
       }}
     >
       {/* Song Title */}
-      <div className="w-[45%] pr-4 flex items-center min-w-0 gap-2">
+      <div className="w-[42%] pr-4 flex items-center min-w-0 gap-2">
         {isCurrentPlaying && (
           <div className="flex gap-[2px] items-end shrink-0" style={{ height: '12px' }}>
             <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '5px',  transformOrigin: 'bottom', animation: isPlaying ? 'musicbar 0.8s ease-in-out 0s infinite' : 'none' }} />
@@ -59,23 +82,41 @@ export const SongRow: React.FC<SongRowProps> = React.memo(({
       </div>
 
       {/* Artist */}
-      <div className="w-[28%] pr-4 text-[13px] text-zinc-400 font-light truncate">
+      <div className="w-[26%] pr-4 text-[13px] text-zinc-400 font-light truncate">
         {song.artist}
       </div>
 
       {/* Album */}
-      <div className="w-[23%] pr-4 text-[13px] text-zinc-400 font-light truncate">
+      <div className="w-[22%] pr-4 text-[13px] text-zinc-400 font-light truncate">
         {song.albumTitle}
       </div>
 
       {/* Favorite Star */}
-      <div className="w-[4%] flex justify-center text-center">
+      <div className="w-[5%] shrink-0 flex items-center justify-start pl-1">
         <button
           onClick={handleFavoriteClick}
-          className={`text-[13px] hover:scale-110 transition-transform duration-150 ${song.isFavorite ? 'text-[#fa586a]' : 'text-zinc-600/40 hover:text-[#fa586a]/40'} cursor-pointer`}
+          className={`text-[13px] w-6 h-6 flex items-center justify-center hover:scale-110 transition-transform duration-150 ${song.isFavorite ? 'text-[#fa586a]' : 'text-zinc-600/40 hover:text-[#fa586a]/40'} cursor-pointer`}
         >
           ★
         </button>
+      </div>
+
+      {/* Options column with dropdown */}
+      <div className="w-[5%] shrink-0 flex items-center justify-start pl-1" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={handleMenuClick}
+          className="text-zinc-500 hover:text-[#fa586a] hover:opacity-85 w-6 h-6 flex items-center justify-center transition-colors duration-150 cursor-pointer"
+        >
+          <MoreHorizontal size={14} />
+        </button>
+
+        {menuCoords && (
+          <SongContextMenu
+            song={song as any}
+            coords={menuCoords}
+            onClose={() => setMenuCoords(null)}
+          />
+        )}
       </div>
     </div>
   )

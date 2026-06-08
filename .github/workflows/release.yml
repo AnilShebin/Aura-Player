@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & Release Matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-22.04
+            goos: linux
+            goarch: arm64
+          - os: macos-13
+            goos: darwin
+            goarch: amd64
+          - os: macos-13
+            goos: darwin
+            goarch: arm64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+          - os: windows-latest
+            goos: windows
+            goarch: arm64
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # Install Linux system dependencies for WebKit & GTK (Wails Cgo requirement)
+      - name: Install Linux Dependencies
+        if: matrix.goos == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev build-essential pkg-config libmpv-dev libasound2-dev
+
+      # Install macOS dependencies
+      - name: Install macOS Dependencies
+        if: matrix.goos == 'darwin'
+        run: |
+          brew install create-dmg
+
+      # Install Windows NSIS (for setup installer packaging)
+      - name: Setup Windows NSIS
+        if: matrix.goos == 'windows'
+        run: |
+          choco install nsis -y
+
+      # Wails requires the frontend dist folder to be present during go build
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      # Run GoReleaser to compile and package binaries and debian packages
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean --split --config .goreleaser.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
+
+      # Custom packaging for installers (Windows Setup, macOS DMG, Linux AppImage)
+      - name: Package Windows Installer
+        if: matrix.goos == 'windows'
+        shell: pwsh
+        run: |
+          # Packaging raw binary into NSIS installer
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          $binDir = "dist/aura-windows_${{ matrix.goarch }}"
+          if (Test-Path "build/windows/installer.nsi") {
+            makensis /DVERSION=$version /DBIN_DIR=$binDir build/windows/installer.nsi
+            Move-Item "build/windows/Aura-Setup.exe" "dist/Aura-Setup-Windows-${{ matrix.goarch }}.exe"
+          } else {
+            # Fallback zip packaging if custom nsis file not found
+            Compress-Archive -Path "dist/Aura-Music.exe" -DestinationPath "dist/Aura-Setup-Windows-${{ matrix.goarch }}.zip"
+          }
+
+      - name: Package macOS DMG
+        if: matrix.goos == 'darwin'
+        run: |
+          mkdir -p dist/dmg-temp
+          cp -r "dist/Aura-Music.app" dist/dmg-temp/
+          create-dmg \
+            --volname "Aura Music" \
+            --volicon "build/darwin/icons.icns" \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Aura-Music.app" 175 120 \
+            --app-drop-link 425 120 \
+            "dist/Aura-macOS-${{ matrix.goarch }}.dmg" \
+            dist/dmg-temp/
+
+      - name: Package Linux AppImage
+        if: matrix.goos == 'linux'
+        run: |
+          # Install linuxdeploy and appimage plugin
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+          
+          # Create AppDir structure
+          mkdir -p dist/AppDir/usr/bin
+          mkdir -p dist/AppDir/usr/share/applications
+          mkdir -p dist/AppDir/usr/share/icons/hicolor/512x512/apps
+          
+          cp "dist/Aura-Music" dist/AppDir/usr/bin/
+          cp build/linux/aura-music.desktop dist/AppDir/usr/share/applications/ || echo "[Desktop Entry]" > dist/AppDir/usr/share/applications/aura-music.desktop
+          cp build/appicon.png dist/AppDir/usr/share/icons/hicolor/512x512/apps/aura-music.png || true
+          
+          # Run linuxdeploy to generate AppImage
+          ARCH=${{ matrix.goarch == 'amd64' && 'x86_64' || 'aarch64' }} ./linuxdeploy-x86_64.AppImage --appdir dist/AppDir --output appimage
+          mv Aura-Music-*.AppImage dist/Aura-Linux-${{ matrix.goarch }}.AppImage
+
+      # Upload Packaged installers/bundles to GitHub Release
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.zip
+            dist/checksums.txt
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,8 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Play, Pause, MoreHorizontal } from 'lucide-react'
 import { AlbumArtwork } from './AlbumArtwork'
+import { CollectionContextMenu } from '../shared/CollectionContextMenu'
+import { useMusicStore } from '@/stores/musicStore'
 
 interface AlbumCardProps {
   id: string
@@ -25,6 +27,12 @@ export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({
   onPlay,
   onPlayPause
 }) => {
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null)
+  
+  const libraryAlbums = useMusicStore(state => state.libraryAlbums)
+  const currentAlbumObj = libraryAlbums.find(a => a.id === id)
+  const songs = currentAlbumObj?.songs || []
+
   const handleClick = useCallback(() => {
     onClick(id)
   }, [id, onClick])
@@ -38,9 +46,24 @@ export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({
     }
   }, [id, isCurrentAlbum, onPlay, onPlayPause])
 
-  const handleOptionsClick = useCallback((e: React.MouseEvent) => {
+  const handleOptionsClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
-  }, [])
+    if (menuCoords) {
+      setMenuCoords(null)
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const menuWidth = 240
+      const menuHeight = 200
+      let top = rect.bottom + window.scrollY + 4
+      if (rect.bottom + menuHeight > window.innerHeight) {
+        top = rect.top + window.scrollY - menuHeight - 4
+      }
+      setMenuCoords({
+        top,
+        left: rect.right - menuWidth + window.scrollX,
+      })
+    }
+  }, [menuCoords])
 
   return (
     <div
@@ -49,7 +72,7 @@ export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({
       style={{ contain: 'layout style paint' }}
     >
       {/* Cover Art Container */}
-      <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/[0.06] shadow-md transition-shadow duration-300 group-hover:shadow-xl">
+      <div className="relative aspect-square w-full rounded-[6px] overflow-hidden bg-zinc-900 border border-white/[0.06] shadow-md transition-shadow duration-300 group-hover:shadow-xl">
         <AlbumArtwork coverUrl={coverUrl} title={title} size={256} />
 
         {/* Backdrop overlay for active album or general hover */}
@@ -118,6 +141,17 @@ export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({
           {artist}
         </span>
       </div>
+
+      {menuCoords && (
+        <CollectionContextMenu
+          type="album"
+          id={id}
+          name={title}
+          songs={songs}
+          coords={menuCoords}
+          onClose={() => setMenuCoords(null)}
+        />
+      )}
     </div>
   )
 })

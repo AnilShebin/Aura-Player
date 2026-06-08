@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react'
-import { ArrowUp, ArrowDown, Music } from 'lucide-react'
+import { ArrowUp, ArrowDown, Music, MoreHorizontal } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import { ToggleFavorite } from '@/services/libraryService'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -117,7 +117,7 @@ export const Songs: React.FC = () => {
             {/* Title */}
             <div
               onClick={() => handleSort('title')}
-              className="w-[45%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
+              className="w-[42%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
             >
               Title {renderSortIndicator('title')}
             </div>
@@ -125,7 +125,7 @@ export const Songs: React.FC = () => {
             {/* Artist */}
             <div
               onClick={() => handleSort('artist')}
-              className="w-[28%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
+              className="w-[26%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
             >
               Artist {renderSortIndicator('artist')}
             </div>
@@ -133,14 +133,19 @@ export const Songs: React.FC = () => {
             {/* Album */}
             <div
               onClick={() => handleSort('albumTitle')}
-              className="w-[23%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
+              className="w-[22%] flex items-center cursor-pointer hover:text-white transition-colors duration-150"
             >
               Album {renderSortIndicator('albumTitle')}
             </div>
 
             {/* Favorite (Star) */}
-            <div className="w-[4%] flex justify-center text-center">
+            <div className="w-[5%] shrink-0 flex items-center justify-start pl-1">
               ★
+            </div>
+
+            {/* Options */}
+            <div className="w-[5%] shrink-0 flex items-center justify-start text-zinc-600/50 pl-1">
+              <MoreHorizontal size={14} />
             </div>
           </div>
 

@@ -550,7 +550,7 @@ func (s *LibraryService) ScanLibrary(folders []string) (int, error) {
 			}
 
 			ext := strings.ToLower(filepath.Ext(path))
-			if ext != ".mp3" && ext != ".flac" && ext != ".m4a" && ext != ".wav" && ext != ".ogg" && ext != ".alac" && ext != ".aac" {
+			if ext != ".mp3" && ext != ".flac" && ext != ".m4a" && ext != ".wav" && ext != ".ogg" && ext != ".alac" && ext != ".aac" && ext != ".ec3" && ext != ".ac3" {
 				return nil
 			}
 
@@ -796,6 +796,9 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 			bitrate = br
 			durationSec = ds
 		}
+		if sampleRate > 48000 {
+			quality = "Hi-Res Lossless"
+		}
 	case ".wav":
 		codec = "WAV"
 		quality = "Lossless"
@@ -806,11 +809,23 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 			bitrate = br
 			durationSec = ds
 		}
-	case ".m4a", ".alac":
+		if sampleRate > 48000 {
+			quality = "Hi-Res Lossless"
+		}
+	case ".m4a", ".alac", ".ec3", ".ac3":
 		cdec, sr, _, bd, br, ds := parseM4AInfo(path)
 		codec = cdec
 		if codec == "ALAC" {
 			quality = "Lossless"
+		} else if codec == "E-AC-3" || codec == "AC-3" || extSuffix == ".ec3" || extSuffix == ".ac3" {
+			quality = "Dolby Audio"
+			if codec == "Unknown" {
+				if extSuffix == ".ac3" {
+					codec = "AC-3"
+				} else {
+					codec = "E-AC-3"
+				}
+			}
 		} else {
 			quality = "High Quality"
 		}
@@ -819,6 +834,9 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 			bitDepth = bd
 			bitrate = br
 			durationSec = ds
+		}
+		if codec == "ALAC" && sampleRate > 48000 {
+			quality = "Hi-Res Lossless"
 		}
 	case ".mp3":
 		codec = "MP3"
@@ -862,6 +880,45 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 		basePathNoExt := path[:len(path)-len(filepath.Ext(path))]
 		if _, err := os.Stat(basePathNoExt + ".ttml"); err == nil {
 			hasTTML = true
+		}
+	}
+
+	// Fallback to Dolby Audio if filename, folder, or tags indicate it
+	lowerPath := strings.ToLower(path)
+	lowerTitle := strings.ToLower(title)
+	lowerArtist := strings.ToLower(artist)
+	lowerAlbum := strings.ToLower(albumTitle)
+	if strings.Contains(lowerPath, "dolby") || strings.Contains(lowerPath, "atmos") ||
+		strings.Contains(lowerTitle, "dolby") || strings.Contains(lowerTitle, "atmos") ||
+		strings.Contains(lowerArtist, "dolby") || strings.Contains(lowerArtist, "atmos") ||
+		strings.Contains(lowerAlbum, "dolby") || strings.Contains(lowerAlbum, "atmos") {
+		quality = "Dolby Audio"
+		if codec == "Unknown" || codec == "AAC" {
+			codec = "E-AC-3"
+		}
+	}
+
+	if m != nil {
+		if rawMap := m.Raw(); rawMap != nil {
+			for k, val := range rawMap {
+				kLower := strings.ToLower(k)
+				var strVal string
+				if str, ok := val.(string); ok {
+					strVal = str
+				} else if byteSlice, ok := val.([]byte); ok {
+					strVal = string(byteSlice)
+				} else if slice, ok := val.([]string); ok && len(slice) > 0 {
+					strVal = slice[0]
+				}
+				strValLower := strings.ToLower(strVal)
+				if strings.Contains(kLower, "dolby") || strings.Contains(kLower, "atmos") ||
+					strings.Contains(strValLower, "dolby") || strings.Contains(strValLower, "atmos") {
+					quality = "Dolby Audio"
+					if codec == "Unknown" || codec == "AAC" {
+						codec = "E-AC-3"
+					}
+				}
+			}
 		}
 	}
 
@@ -1074,6 +1131,28 @@ func parseM4AInfo(filePath string) (codec string, sampleRate int, channels int, 
 				payload := make([]byte, payloadSize)
 				if _, err := io.ReadFull(f, payload); err == nil && len(payload) >= 28 {
 					codec = "AAC"
+					channels = int(binary.BigEndian.Uint16(payload[16:18]))
+					bitDepth = int(binary.BigEndian.Uint16(payload[18:20]))
+					if bitDepth == 0 {
+						bitDepth = 16
+					}
+					sampleRate = int(binary.BigEndian.Uint16(payload[24:26]))
+					if sampleRate < 8000 || sampleRate > 192000 {
+						sampleRate = 44100
+					}
+					if channels <= 0 || channels > 8 {
+						channels = 2
+					}
+				}
+			} else if boxType == "ec-3" || boxType == "ac-3" {
+				payloadSize := size - headerSize
+				payload := make([]byte, payloadSize)
+				if _, err := io.ReadFull(f, payload); err == nil && len(payload) >= 28 {
+					if boxType == "ec-3" {
+						codec = "E-AC-3"
+					} else {
+						codec = "AC-3"
+					}
 					channels = int(binary.BigEndian.Uint16(payload[16:18]))
 					bitDepth = int(binary.BigEndian.Uint16(payload[18:20]))
 					if bitDepth == 0 {

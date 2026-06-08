@@ -16,7 +16,13 @@ export const Settings: React.FC = () => {
     showTranslation,
     setShowTranslation,
     volume,
-    setVolume
+    setVolume,
+    autoCheckUpdates,
+    autoDownloadUpdates,
+    updateChannel,
+    setUpdateSettings,
+    checkForUpdates,
+    isCheckingForUpdates
   } = useMusicStore()
 
   // State to track current sub-page
@@ -351,6 +357,78 @@ export const Settings: React.FC = () => {
               </span>
             </div>
             <ToggleSwitch checked={showTranslation} onChange={() => setShowTranslation(!showTranslation)} />
+          </div>
+
+          {/* Updates Settings Section */}
+          <div className="flex flex-col bg-[#202022]/40 border border-white/[0.04] rounded-xl p-4 mt-2 gap-4">
+            <h3 className="text-[14px] font-bold text-white tracking-tight">Updates</h3>
+            
+            {/* Current Version */}
+            <div className="flex items-center justify-between">
+              <span className="text-[12.5px] text-zinc-300 font-light">Current Version</span>
+              <span className="text-[12.5px] text-zinc-400 font-bold bg-zinc-800/60 px-2.5 py-0.5 rounded border border-white/5">1.0.0</span>
+            </div>
+
+            {/* Automatically Check Toggles */}
+            <div className="flex items-center justify-between border-t border-white/[0.03] pt-3">
+              <div className="flex flex-col pr-6">
+                <span className="text-[13px] font-semibold text-white">Automatically check for updates</span>
+                <span className="text-[11px] text-zinc-400 font-light mt-0.5 leading-snug">
+                  Keep Aura up to date by checking for new releases automatically in the background.
+                </span>
+              </div>
+              <ToggleSwitch checked={autoCheckUpdates} onChange={() => setUpdateSettings({ autoCheckUpdates: !autoCheckUpdates })} />
+            </div>
+
+            <div className="flex items-center justify-between border-t border-white/[0.03] pt-3">
+              <div className="flex flex-col pr-6">
+                <span className="text-[13px] font-semibold text-white">Download updates automatically</span>
+                <span className="text-[11px] text-zinc-400 font-light mt-0.5 leading-snug">
+                  Download new installer/assets in the background to ensure updates are ready to install.
+                </span>
+              </div>
+              <ToggleSwitch checked={autoDownloadUpdates} onChange={() => setUpdateSettings({ autoDownloadUpdates: !autoDownloadUpdates })} />
+            </div>
+
+            {/* Update Channel */}
+            <div className="flex flex-col gap-2 border-t border-white/[0.03] pt-3">
+              <span className="text-[13px] font-semibold text-white">Update Channel</span>
+              <div className="flex gap-4 mt-1">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-[12.5px] font-light text-zinc-300 hover:text-white transition-colors">
+                  <input
+                    type="radio"
+                    name="updateChannel"
+                    value="stable"
+                    checked={updateChannel === 'stable'}
+                    onChange={() => setUpdateSettings({ updateChannel: 'stable' })}
+                    className="w-4.5 h-4.5 rounded-full bg-[#2c2c2e] border-white/10 accent-[#fa586a] cursor-pointer"
+                  />
+                  <span>Stable</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none text-[12.5px] font-light text-zinc-300 hover:text-white transition-colors">
+                  <input
+                    type="radio"
+                    name="updateChannel"
+                    value="beta"
+                    checked={updateChannel === 'beta'}
+                    onChange={() => setUpdateSettings({ updateChannel: 'beta' })}
+                    className="w-4.5 h-4.5 rounded-full bg-[#2c2c2e] border-white/10 accent-[#fa586a] cursor-pointer"
+                  />
+                  <span>Beta</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Manual Check Button */}
+            <div className="flex border-t border-white/[0.03] pt-4 mt-1 justify-end">
+              <button
+                onClick={() => checkForUpdates(true)}
+                disabled={isCheckingForUpdates}
+                className="h-8 px-4 rounded-lg bg-[#fa586a] hover:bg-[#fa586a]/90 disabled:opacity-50 text-white font-semibold text-[12.5px] transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+              >
+                {isCheckingForUpdates ? 'Checking...' : 'Check for Updates'}
+              </button>
+            </div>
           </div>
 
           {/* Show Options Block */}

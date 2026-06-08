@@ -161,7 +161,7 @@ export const TTMLLineComponent = React.memo<{
             <p className={`primary-vocals tracking-tight break-words whitespace-pre-wrap ${
               compact 
                 ? 'text-[26px] font-light leading-[1.2]' 
-                : 'text-[30px] md:text-[40px] lg:text-[48px] leading-[1.1] font-medium'
+                : 'text-[30px] md:text-[40px] lg:text-[48px] leading-[1.1] font-light'
             }`}>
               {primaryWords.map((word, idx) => (
                 <TTMLWordComponent
@@ -176,7 +176,7 @@ export const TTMLLineComponent = React.memo<{
             <p className={`background-vocals tracking-tight break-words whitespace-pre-wrap ${
               compact
                 ? 'text-[18px] font-light leading-[1.2] mt-1'
-                : 'text-[20px] md:text-[28px] lg:text-[34px] leading-[1.1] font-medium mt-2'
+                : 'text-[20px] md:text-[28px] lg:text-[34px] leading-[1.1] font-light mt-2'
             }`}>
               {backgroundWords.map((word, idx) => (
                 <TTMLWordComponent
@@ -193,7 +193,7 @@ export const TTMLLineComponent = React.memo<{
           <p className={`tracking-tight break-words whitespace-pre-wrap ${
             compact 
               ? 'text-[26px] font-light leading-[1.2]' 
-              : 'text-[30px] md:text-[40px] lg:text-[48px] leading-[1.1] font-medium'
+              : 'text-[30px] md:text-[40px] lg:text-[48px] leading-[1.1] font-light'
           }`}>
             {line.words.map((word, idx) => (
               <TTMLWordComponent
@@ -211,3 +211,4 @@ export const TTMLLineComponent = React.memo<{
 }, isLineEqual)
 
 TTMLLineComponent.displayName = 'TTMLLineComponent'
+

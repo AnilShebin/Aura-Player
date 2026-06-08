@@ -1,5 +1,5 @@
 import React from 'react'
-import { Home, Heart, Disc, Music, Folder, Settings, Search } from 'lucide-react'
+import { Home, Heart, Disc, Music, Folder, Settings, Search, ChevronDown, ChevronUp } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import {
   Sidebar,
@@ -21,18 +21,20 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
   const currentTab = useMusicStore(state => state.currentTab)
   const setCurrentTab = useMusicStore(state => state.setCurrentTab)
   const sidebarCollapsed = useMusicStore(state => state.sidebarCollapsed)
-  const isPlaying = useMusicStore(state => state.isPlaying)
+  const playlists = useMusicStore(state => state.playlists)
+  const setCreatePlaylistOpen = useMusicStore(state => state.setCreatePlaylistOpen)
+  const selectedPlaylist = useMusicStore(state => state.selectedPlaylist)
+  const setSelectedPlaylist = useMusicStore(state => state.setSelectedPlaylist)
+  const [playlistsExpanded, setPlaylistsExpanded] = React.useState(true)
 
   // Use a constant !pl-[13px] and !pr-3. When collapsed, the padding becomes !px-[13px].
   // By maintaining justify-start, the icon remains locked at exactly 13px from the left edge, preventing animation jump.
-  const itemBaseStyles = "w-full flex items-center rounded-[6px] !text-[13.5px] !font-light !tracking-tight transition-all duration-200 group/menu-button cursor-pointer relative !gap-2.5 !pl-[13px] !pr-3 !py-2.5 !h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!px-[13px]"
+  const itemBaseStyles = "w-full flex items-center rounded-lg !text-[14px] !font-normal !tracking-tight transition-all duration-200 group/menu-button cursor-pointer relative !gap-2.5 !pl-[13px] !pr-3 !py-2.5 !h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!px-[13px]"
 
   const getLinkClass = (isActive: boolean) => {
     if (isActive) {
-      // Force text color to remain red even on hover to block any default white hover colors
-      return `${itemBaseStyles} !bg-[#2c2c2e]/70 !text-[#fa586a] hover:!text-[#fa586a] hover:!bg-[#2c2c2e]/70`
+      return `${itemBaseStyles} !bg-white/10 !text-[#fa586a] hover:!text-[#fa586a] hover:!bg-white/15`
     }
-    // Inactive items: default to gray #8e8e93 and hover to soft light-gray #d1d1d6 (same as legacy)
     return `${itemBaseStyles} !text-[#8e8e93] hover:!text-[#d1d1d6] hover:!bg-white/5`
   }
 
@@ -48,9 +50,9 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
 
   const getIconClass = (isActive: boolean) => {
     if (isActive) {
-      return "w-4 h-4 shrink-0 !text-[#fa586a] hover:!text-[#fa586a] group-hover/menu-button:!text-[#fa586a]"
+      return "w-[18px] h-[18px] shrink-0 !text-[#fa586a] hover:!text-[#fa586a] group-hover/menu-button:!text-[#fa586a]"
     }
-    return "w-4 h-4 shrink-0 !text-[#8e8e93] group-hover/menu-button:!text-[#d1d1d6] transition-colors duration-200"
+    return "w-[18px] h-[18px] shrink-0 !text-[#8e8e93] group-hover/menu-button:!text-[#d1d1d6] transition-colors duration-200"
   }
 
   return (
@@ -61,72 +63,31 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
           <SidebarMenuItem>
             <div
               onClick={() => setCurrentTab('listen-now')}
-              className="cursor-pointer hover:opacity-90 transition-opacity flex items-center h-5"
+              className="cursor-pointer hover:opacity-90 transition-opacity flex items-center h-8 gap-3 select-none"
             >
-              {!sidebarCollapsed ? (
-                <svg height="20" viewBox="0 0 92 20" width="92" xmlns="http://www.w3.org/2000/svg" className="fill-foreground" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="aura-logo-grad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#a855f7" />
-                      <stop offset="100%" stopColor="#fa586a" />
-                    </linearGradient>
-                  </defs>
-                  {/* Secondary Wave (Lower opacity for depth) */}
-                  <path 
-                    d="M3 10h2c1.2 0 1.8-7.5 3-7.5s1.8 14 3 14 1.8-11 3-11 1.8 8 3 8 1.8-3.5 3-3.5" 
-                    stroke="url(#aura-logo-grad)" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    fill="none"
-                    opacity="0.45"
-                    className={isPlaying ? "animate-pulse-glow" : ""}
-                  />
-                  {/* Primary Wave */}
-                  <path 
-                    d="M1 10h2.5c1.2 0 1.8-7.5 3-7.5s1.8 14 3 14 1.8-11 3-11 1.8 8 3 8 1.8-3.5 3-3.5" 
-                    stroke="url(#aura-logo-grad)" 
-                    strokeWidth="2.2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    fill="none"
-                    className={isPlaying ? "animate-pulse-glow" : ""}
-                  />
-                  {/* "Music" Text Path shifted to the right for a clean gap */}
-                  <g transform="translate(7, 0)">
-                    <path d="M34.752 19.746V6.243h-.088l-5.433 13.503h-2.074L21.711 6.243h-.087v13.503h-2.548V1.399h3.235l5.833 14.621h.1l5.82-14.62h3.248v18.347h-2.56zm16.649 0h-2.586v-2.263h-.062c-.725 1.602-2.061 2.504-4.072 2.504-2.86 0-4.61-1.894-4.61-4.958V6.37h2.698v8.125c0 2.034.95 3.127 2.81 3.127 1.95 0 3.124-1.373 3.124-3.458V6.37H51.4v13.376zm7.394-13.618c3.06 0 5.046 1.73 5.134 4.196h-2.536c-.15-1.296-1.087-2.11-2.598-2.11-1.462 0-2.436.724-2.436 1.793 0 .839.6 1.41 2.023 1.741l2.136.496c2.686.636 3.71 1.704 3.71 3.636 0 2.442-2.236 4.12-5.333 4.12-3.285 0-5.26-1.64-5.509-4.183h2.673c.25 1.398 1.187 2.085 2.836 2.085 1.623 0 2.623-.687 2.623-1.78 0-.865-.487-1.373-1.924-1.704l-2.136-.508c-2.498-.585-3.735-1.806-3.735-3.75 0-2.391 2.049-4.032 5.072-4.032zM66.1 2.836c0-.878.7-1.577 1.561-1.577.862 0 1.55.7 1.55 1.577 0 .864-.688 1.576-1.55 1.576a1.573 1.573 0 0 1-1.56-1.576zm.212 3.534h2.698v13.376h-2.698zm14.089 4.603c-.275-1.424-1.324-2.556-3.085-2.556-2.086 0-3.46 1.767-3.46 4.64 0 2.938 1.386 4.642 3.485 4.642 1.66 0 2.748-.928 3.06-2.48H83C82.713 18.067 80.477 20 77.317 20c-3.76 0-6.208-2.62-6.208-6.942 0-4.247 2.448-6.93 6.183-6.93 3.385 0 5.446 2.213 5.683 4.845h-2.573z" />
-                  </g>
-                </svg>
-              ) : (
-                <svg height="20" viewBox="0 0 22 20" width="22" xmlns="http://www.w3.org/2000/svg" className="fill-foreground" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="aura-logo-grad-collapsed" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#a855f7" />
-                      <stop offset="100%" stopColor="#fa586a" />
-                    </linearGradient>
-                  </defs>
-                  {/* Secondary Wave */}
-                  <path 
-                    d="M3 10h2c1.2 0 1.8-7.5 3-7.5s1.8 14 3 14 1.8-11 3-11 1.8 8 3 8 1.8-3.5 3-3.5" 
-                    stroke="url(#aura-logo-grad-collapsed)" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    fill="none"
-                    opacity="0.45"
-                    className={isPlaying ? "animate-pulse-glow" : ""}
-                  />
-                  {/* Primary Wave */}
-                  <path 
-                    d="M1 10h2.5c1.2 0 1.8-7.5 3-7.5s1.8 14 3 14 1.8-11 3-11 1.8 8 3 8 1.8-3.5 3-3.5" 
-                    stroke="url(#aura-logo-grad-collapsed)" 
-                    strokeWidth="2.2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    fill="none"
-                    className={isPlaying ? "animate-pulse-glow" : ""}
-                  />
-                </svg>
+              <svg height="22" viewBox="0 0 32 32" width="22" xmlns="http://www.w3.org/2000/svg" className="shrink-0" aria-hidden="true">
+                <defs>
+                  <linearGradient id="aura-new-logo-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="60%" stopColor="#d1d1d6" />
+                    <stop offset="100%" stopColor="#8e8e93" />
+                  </linearGradient>
+                </defs>
+                <g fill="url(#aura-new-logo-grad)">
+                  <rect x="2" y="16" width="2.4" height="12" rx="1.2" />
+                  <rect x="6" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                  <rect x="10" y="4.5" width="2.4" height="16" rx="1.2" />
+                  <rect x="14" y="0" width="2.4" height="14" rx="1.2" />
+                  <rect x="18" y="4.5" width="2.4" height="16" rx="1.2" />
+                  <rect x="22" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                  <rect x="26" y="16" width="2.4" height="12" rx="1.2" />
+                </g>
+              </svg>
+
+              {!sidebarCollapsed && (
+                <span className="text-[17px] font-bold tracking-[0.25em] text-white/90 font-sans mt-0.5">
+                  AURA
+                </span>
               )}
             </div>
           </SidebarMenuItem>
@@ -142,13 +103,13 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
               <SidebarMenuItem>
                 <div
                   onClick={() => setCurrentTab('search')}
-                  className={`flex items-center rounded-[6px] transition-all duration-200 cursor-pointer !bg-[#282828] hover:!bg-[#323232] !text-[#8e8e93] hover:!text-[#d1d1d6] active:!bg-[#282828] active:!text-[#d1d1d6] !h-9
+                  className={`flex items-center rounded-lg transition-all duration-200 cursor-pointer !bg-[#1c1c1e] hover:!bg-[#2c2c2e] !text-[#8e8e93] hover:!text-[#d1d1d6] active:!bg-[#1c1c1e] active:!text-[#d1d1d6] !h-9
                     ${sidebarCollapsed
                       ? "!w-9 !pl-[10px] !ml-[5px]"
                       : "!w-full !pl-[15px] !ml-0"
                     }`}
                 >
-                  <Search size={16} className="!text-[#8e8e93] shrink-0 transition-colors duration-200" />
+                  <Search size={16} strokeWidth={1.8} className="!text-[#8e8e93] shrink-0 transition-colors duration-200" />
                   {!sidebarCollapsed && (
                     <span className="text-[12px] !font-light pl-2.5">
                       Search
@@ -162,13 +123,9 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
 
         {/* Library Group */}
         <SidebarGroup className="py-2 px-3 bg-transparent">
-
           <SidebarGroupContent>
             <SidebarMenu className="space-y-[2px]">
-              <SidebarMenuItem className="relative">
-                {currentTab === 'listen-now' && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full z-20" />
-                )}
+              <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setCurrentTab('listen-now')}
                   isActive={currentTab === 'listen-now'}
@@ -176,16 +133,13 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
                   className={getLinkClass(currentTab === 'listen-now')}
                 >
                   <span className={getIconWrapperClass(currentTab === 'listen-now')}>
-                    <Home className={getIconClass(currentTab === 'listen-now')} />
+                    <Home strokeWidth={1.8} className={getIconClass(currentTab === 'listen-now')} />
                   </span>
                   {!sidebarCollapsed && <span>Listen Now</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem className="relative">
-                {currentTab === 'favorites' && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full z-20" />
-                )}
+              <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setCurrentTab('favorites')}
                   isActive={currentTab === 'favorites'}
@@ -193,16 +147,13 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
                   className={getLinkClass(currentTab === 'favorites')}
                 >
                   <span className={getIconWrapperClass(currentTab === 'favorites')}>
-                    <Heart className={getIconClass(currentTab === 'favorites')} />
+                    <Heart strokeWidth={1.8} className={getIconClass(currentTab === 'favorites')} />
                   </span>
                   {!sidebarCollapsed && <span>Favorites</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem className="relative">
-                {(currentTab === 'albums' || currentTab === 'album-detail') && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full z-20" />
-                )}
+              <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setCurrentTab('albums')}
                   isActive={currentTab === 'albums' || currentTab === 'album-detail'}
@@ -210,16 +161,13 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
                   className={getLinkClass(currentTab === 'albums' || currentTab === 'album-detail')}
                 >
                   <span className={getIconWrapperClass(currentTab === 'albums' || currentTab === 'album-detail')}>
-                    <Disc className={getIconClass(currentTab === 'albums' || currentTab === 'album-detail')} />
+                    <Disc strokeWidth={1.8} className={getIconClass(currentTab === 'albums' || currentTab === 'album-detail')} />
                   </span>
                   {!sidebarCollapsed && <span>Albums</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem className="relative">
-                {currentTab === 'songs' && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full z-20" />
-                )}
+              <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setCurrentTab('songs')}
                   isActive={currentTab === 'songs'}
@@ -227,16 +175,13 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
                   className={getLinkClass(currentTab === 'songs')}
                 >
                   <span className={getIconWrapperClass(currentTab === 'songs')}>
-                    <Music className={getIconClass(currentTab === 'songs')} />
+                    <Music strokeWidth={1.8} className={getIconClass(currentTab === 'songs')} />
                   </span>
                   {!sidebarCollapsed && <span>Songs</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem className="relative">
-                {currentTab === 'folders' && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full z-20" />
-                )}
+              <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setCurrentTab('folders')}
                   isActive={currentTab === 'folders'}
@@ -244,7 +189,7 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
                   className={getLinkClass(currentTab === 'folders')}
                 >
                   <span className={getIconWrapperClass(currentTab === 'folders')}>
-                    <Folder className={getIconClass(currentTab === 'folders')} />
+                    <Folder strokeWidth={1.8} className={getIconClass(currentTab === 'folders')} />
                   </span>
                   {!sidebarCollapsed && <span>Folders</span>}
                 </SidebarMenuButton>
@@ -252,15 +197,112 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Playlists Group */}
+        <SidebarGroup className="py-2 px-3 bg-transparent">
+          <div className="flex items-center justify-between px-3 py-1.5 shrink-0 text-[#8e8e93] select-none">
+            {!sidebarCollapsed ? (
+              <>
+                <span className="text-[11px] font-bold uppercase tracking-wider">Playlists</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCreatePlaylistOpen(true)
+                    }}
+                    className="w-5 h-5 rounded-md hover:bg-white/10 flex items-center justify-center text-[#8e8e93] hover:text-white cursor-pointer active:scale-95 transition-all"
+                    title="Create Playlist"
+                  >
+                    <span className="text-[15px] font-normal leading-none">+</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setPlaylistsExpanded(!playlistsExpanded)
+                    }}
+                    className="w-5 h-5 rounded-md hover:bg-white/10 flex items-center justify-center text-[#8e8e93] hover:text-white cursor-pointer active:scale-95 transition-all"
+                    title={playlistsExpanded ? "Collapse Playlists" : "Expand Playlists"}
+                  >
+                    {playlistsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div
+                onClick={() => setCurrentTab('playlists')}
+                className="w-full flex items-center justify-center cursor-pointer text-[#8e8e93] hover:text-white transition-colors"
+                title="All Playlists"
+              >
+                <Music size={18} strokeWidth={1.8} />
+              </div>
+            )}
+          </div>
+          
+          {!sidebarCollapsed && playlistsExpanded && (
+            <SidebarGroupContent className="mt-1">
+              <SidebarMenu className="space-y-[2px]">
+                {/* All Playlists */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setCurrentTab('playlists')}
+                    isActive={currentTab === 'playlists'}
+                    tooltip="All Playlists"
+                    className={getLinkClass(currentTab === 'playlists')}
+                  >
+                    <span className={getIconWrapperClass(currentTab === 'playlists')}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={getIconClass(currentTab === 'playlists')}>
+                        <rect width="7" height="7" x="3" y="3" rx="1" />
+                        <rect width="7" height="7" x="14" y="3" rx="1" />
+                        <rect width="7" height="7" x="14" y="14" rx="1" />
+                        <rect width="7" height="7" x="3" y="14" rx="1" />
+                      </svg>
+                    </span>
+                    <span>All Playlists</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {/* Individual Playlists list */}
+                {playlists.map((playlist) => {
+                  const isActive = currentTab === 'playlist-detail' && selectedPlaylist?.id === playlist.id
+                  const isFav = playlist.id === 'favs'
+                  const isGradient = playlist.coverUrl.startsWith('linear-gradient')
+                  return (
+                    <SidebarMenuItem key={playlist.id}>
+                      <SidebarMenuButton
+                        onClick={() => setSelectedPlaylist(playlist)}
+                        isActive={isActive}
+                        tooltip={playlist.name}
+                        className={getLinkClass(isActive)}
+                      >
+                        <span className={getIconWrapperClass(isActive)}>
+                          {isFav ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={getIconClass(isActive)}>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                          ) : isGradient ? (
+                            <span 
+                              style={{ background: playlist.coverUrl }} 
+                              className="w-4.5 h-4.5 rounded border border-white/10 shrink-0"
+                            />
+                          ) : (
+                            <img src={playlist.coverUrl} className="w-4.5 h-4.5 rounded object-cover border border-white/10 shrink-0" alt="" />
+                          )}
+                        </span>
+                        <span className="truncate pr-1">{playlist.name}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
+        </SidebarGroup>
       </SidebarContent>
 
       {/* Sidebar Footer */}
       <SidebarFooter className="border-t border-white/5 p-3 flex flex-col gap-1.5 bg-transparent">
         <SidebarMenu className="space-y-[2px]">
-          <SidebarMenuItem className="relative">
-            {currentTab === 'settings' && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full z-20" />
-            )}
+          <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => setCurrentTab('settings')}
               isActive={currentTab === 'settings'}
@@ -268,12 +310,11 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
               className={getLinkClass(currentTab === 'settings')}
             >
               <span className={getIconWrapperClass(currentTab === 'settings')}>
-                <Settings className={getIconClass(currentTab === 'settings')} />
+                <Settings strokeWidth={1.8} className={getIconClass(currentTab === 'settings')} />
               </span>
               {!sidebarCollapsed && <span>Settings</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
-
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

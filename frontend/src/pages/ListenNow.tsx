@@ -1,127 +1,282 @@
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo, useCallback, useState } from 'react'
 import { Play, ChevronRight, MoreHorizontal, Disc } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
-
-const RECENTLY_PLAYED = [
-  {
-    id: "rp-1",
-    title: "Kireedam (Original Motion Picture Soundtrack) - EP",
-    artist: "G. V. Prakash Kumar / Various",
-    coverUrl: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=400&h=400&fit=crop"
-  },
-  {
-    id: "rp-2",
-    title: "Indru Netru Naalai (Original Motion Picture Soundtrack)",
-    artist: "Hiphop Tamizha",
-    coverUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop"
-  },
-  {
-    id: "rp-3",
-    title: "I (Original Motion Picture Soundtrack)",
-    artist: "A. R. Rahman",
-    coverUrl: "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=400&h=400&fit=crop"
-  },
-  {
-    id: "rp-4",
-    title: "Hey Minnale (From \"Amaran\") - Single",
-    artist: "G. V. Prakash Kumar & Haricharan",
-    coverUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop"
-  },
-  {
-    id: "rp-5",
-    title: "Lutt Putt Gaya (From \"Dunki\") - Single",
-    artist: "Pritam & Arijit Singh",
-    coverUrl: "https://images.unsplash.com/photo-1487180142328-0c4e37023af5?w=400&h=400&fit=crop"
-  }
-]
-
-const getRecentlyPlayedSongs = (albumId: string, albumTitle: string, artist: string, coverUrl: string) => {
-  if (albumTitle.includes('Kireedam')) {
-    return [
-      { id: 'kireedam-1', title: 'Akkam Pakkam', artist: 'Sadhana Sargam', albumId, albumTitle, duration: '5:16', durationSeconds: 316, coverUrl, audioUrl: '', playlists: [] },
-      { id: 'kireedam-2', title: 'Kanavellaam', artist: 'Jey Chandhran, Karthik', albumId, albumTitle, duration: '5:15', durationSeconds: 315, coverUrl, audioUrl: '', playlists: [] },
-      { id: 'kireedam-3', title: 'Kanneer Thuliye', artist: 'Vijay Yesudas', albumId, albumTitle, duration: '5:22', durationSeconds: 322, coverUrl, audioUrl: '', playlists: [] },
-      { id: 'kireedam-4', title: 'Theme Music', artist: 'Jey Chandhran, Karthik', albumId, albumTitle, duration: '4:23', durationSeconds: 263, coverUrl, audioUrl: '', playlists: [] },
-      { id: 'kireedam-5', title: 'Vilayaadu Vilayaadu', artist: 'Shankar Mahadevan', albumId, albumTitle, duration: '4:10', durationSeconds: 250, coverUrl, audioUrl: '', playlists: [] },
-      { id: 'kireedam-6', title: 'Vizhiyil', artist: 'Sonu Nigam, Swetha', albumId, albumTitle, duration: '4:48', durationSeconds: 288, coverUrl, audioUrl: '', playlists: [] },
-    ]
-  }
-  return [
-    { id: `${albumId}-t1`, title: 'Track 1', artist, albumId, albumTitle, duration: '4:00', durationSeconds: 240, coverUrl, audioUrl: '', playlists: [] },
-    { id: `${albumId}-t2`, title: 'Track 2', artist, albumId, albumTitle, duration: '3:45', durationSeconds: 225, coverUrl, audioUrl: '', playlists: [] },
-  ]
-}
+import { SongContextMenu } from '@/components/songs/SongContextMenu'
 
 export const ListenNow: React.FC = () => {
   const playSongDirect = useMusicStore(state => state.playSongDirect)
-  const setSelectedAlbum = useMusicStore(state => state.setSelectedAlbum)
   const librarySongs = useMusicStore(state => state.librarySongs)
-  const libraryAlbums = useMusicStore(state => state.libraryAlbums)
+  const playingSong = useMusicStore(state => state.playingSong)
 
-  // Compute recently played albums based on scanned library, falling back to mock details if empty
-  const recentlyPlayedAlbums = useMemo(() => {
-    if (!libraryAlbums || libraryAlbums.length === 0) {
-      return RECENTLY_PLAYED.map(item => ({
-        ...item,
-        year: '2024',
-        genre: 'Tamil Soundtracks',
-        songs: getRecentlyPlayedSongs(item.id, item.title, item.artist, item.coverUrl)
-      }))
-    }
+  const [songMenuCoords, setSongMenuCoords] = useState<{ top: number; left: number } | null>(null)
+  const [activeSong, setActiveSong] = useState<any>(null)
 
-    return libraryAlbums.map(album => ({
-      id: album.id,
-      title: album.title,
-      artist: album.albumArtist || 'Unknown Artist',
-      coverUrl: album.coverUrl || '',
-      year: album.year || '2026',
-      genre: album.genre || 'Local Audio',
-      songs: album.songs || []
-    })).slice(0, 5)
-  }, [libraryAlbums])
-
-  const handlePlayCollection = useCallback((title: string) => {
-    if (title === "Recently Played" && recentlyPlayedAlbums.length > 0) {
-      const firstAlbum = recentlyPlayedAlbums[0]
-      if (firstAlbum.songs && firstAlbum.songs.length > 0) {
-        playSongDirect(firstAlbum.songs[0], firstAlbum.songs)
+  const handleSongOptionsClick = useCallback((e: React.MouseEvent<HTMLButtonElement>, song: any) => {
+    e.stopPropagation()
+    if (songMenuCoords && activeSong?.id === song.id) {
+      setSongMenuCoords(null)
+      setActiveSong(null)
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const menuWidth = 240
+      const menuHeight = 350
+      let top = rect.bottom + window.scrollY + 4
+      if (rect.bottom + menuHeight > window.innerHeight) {
+        top = rect.top + window.scrollY - menuHeight - 4
       }
-      return
+      setSongMenuCoords({
+        top,
+        left: rect.right - menuWidth + window.scrollX,
+      })
+      setActiveSong(song)
     }
+  }, [songMenuCoords, activeSong])
 
-    const queue = librarySongs.length > 0 ? librarySongs : RECENTLY_PLAYED.map(s => ({
-      id: s.id,
-      title: s.title,
-      artist: s.artist,
-      albumId: s.id,
-      albumTitle: s.title,
-      duration: "4:00",
-      durationSeconds: 240,
-      coverUrl: s.coverUrl,
-      audioUrl: "",
-      playlists: []
-    }))
-    playSongDirect(queue[0], queue)
-  }, [librarySongs, recentlyPlayedAlbums, playSongDirect])
+  // Get recently played songs from localStorage history (re-runs when playingSong changes)
+  const recentlyPlayedSongs = useMemo(() => {
+    try {
+      const historyStr = localStorage.getItem('aura-recently-played-songs')
+      if (historyStr) {
+        const parsed = JSON.parse(historyStr)
+        if (Array.isArray(parsed)) {
+          return parsed.slice(0, 5) // Return up to 5 recently played songs
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse recently played songs history:', e)
+    }
+    return []
+  }, [playingSong])
 
-  const handleCardClick = useCallback((album: any) => {
-    setSelectedAlbum({
-      id: album.id,
-      title: album.title,
-      artist: album.artist,
-      coverUrl: album.coverUrl,
-      year: album.year || '2026',
-      genre: album.genre || 'Local Audio',
-      songs: album.songs,
-      codec: album.codec || 'Unknown',
-      quality: album.quality || 'High Quality'
+  // Generate random cards once when component mounts (on close/open/restart)
+  const topPicks = useMemo<any[]>(() => {
+    const songs = librarySongs || []
+    const pool: any[] = []
+
+    // 1. Heavy Rotation (always available)
+    pool.push({
+      id: 'heavy-rotation',
+      title: 'Heavy Rotation',
+      subtitle: ' Music',
+      tag: 'MADE FOR YOU',
+      description: 'Your scanned library files and favorite recommendations',
+      gradient: 'from-[#fa7c30] to-[#fa586a]',
+      songs: songs.length > 0 ? songs : []
     })
-  }, [setSelectedAlbum])
 
-  const handlePlayAlbumDirect = useCallback((album: any) => {
-    if (album.songs && album.songs.length > 0) {
-      playSongDirect(album.songs[0], album.songs)
+    // 2. Top Artist
+    const artistCounts: Record<string, number> = {}
+    songs.forEach(s => {
+      if (s.artist && s.artist !== 'Unknown Artist') {
+        artistCounts[s.artist] = (artistCounts[s.artist] || 0) + 1
+      }
+    })
+    const sortedArtists = Object.entries(artistCounts).sort((a, b) => b[1] - a[1])
+    if (sortedArtists.length > 0) {
+      const topArtist = sortedArtists[0][0]
+      const artistSongs = songs.filter(s => s.artist === topArtist)
+      pool.push({
+        id: 'top-artist',
+        title: topArtist,
+        subtitle: ' Music',
+        tag: 'TOP ARTIST',
+        description: `Featured songs by your most played artist, ${topArtist}`,
+        gradient: 'from-[#a25cf7] to-[#fa586a]',
+        songs: artistSongs
+      })
     }
+
+    // 3. Recently Added
+    if (songs.length > 0) {
+      const recentlyAdded = [...songs].slice(-10).reverse()
+      pool.push({
+        id: 'recently-added',
+        title: 'Recently Added',
+        subtitle: ' Music',
+        tag: 'NEW RELEASES',
+        description: 'Check out the latest tracks scanned in your library',
+        gradient: 'from-[#0052d4] to-[#4364f7]',
+        songs: recentlyAdded
+      })
+    }
+
+    // 4. Continue Listening
+    let historySongs: any[] = []
+    try {
+      const historyStr = localStorage.getItem('aura-recently-played-songs')
+      if (historyStr) {
+        historySongs = JSON.parse(historyStr)
+      }
+    } catch (e) {}
+    if (historySongs.length > 0) {
+      pool.push({
+        id: 'continue-listening',
+        title: 'Continue Listening',
+        subtitle: historySongs[0].artist,
+        tag: 'CONTINUE LISTENING',
+        description: `Resume playing: ${historySongs[0].title}`,
+        gradient: 'from-[#11998e] to-[#38ef7d]',
+        songs: historySongs
+      })
+    }
+
+    // 5. Library Intelligence
+    if (songs.length > 0) {
+      pool.push({
+        id: 'library-intelligence',
+        title: 'Smart Mix',
+        subtitle: ' Music',
+        tag: 'LIBRARY INTELLIGENCE',
+        description: 'AI-curated selection from your local audio files',
+        gradient: 'from-[#e52d80] to-[#b21c45]',
+        songs: [...songs].sort(() => Math.random() - 0.5)
+      })
+    }
+
+    // 6. By Lyricist
+    if (songs.length > 0) {
+      pool.push({
+        id: 'by-lyricist',
+        title: 'Wordcraft',
+        subtitle: ' Music',
+        tag: 'BY LYRICIST',
+        description: 'Focus on rich writing, poetry and lyric tracks',
+        gradient: 'from-[#3a7bd5] to-[#3a6073]',
+        songs: songs
+      })
+    }
+
+    // 7. By Decade
+    const decades: Record<string, any[]> = {}
+    songs.forEach(s => {
+      if (s.year) {
+        const y = parseInt(s.year)
+        if (y >= 1980 && y < 1990) (decades['80s Classics'] = decades['80s Classics'] || []).push(s)
+        else if (y >= 1990 && y < 2000) (decades['90s Hits'] = decades['90s Hits'] || []).push(s)
+        else if (y >= 2000 && y < 2010) (decades['2000s Hits'] = decades['2000s Hits'] || []).push(s)
+        else if (y >= 2010 && y < 2020) (decades['2010s Hits'] = decades['2010s Hits'] || []).push(s)
+        else if (y >= 2020) (decades['2020s Hits'] = decades['2020s Hits'] || []).push(s)
+      }
+    })
+    const availableDecades = Object.entries(decades)
+    if (availableDecades.length > 0) {
+      const [decadeName, decadeSongs] = availableDecades[Math.floor(Math.random() * availableDecades.length)]
+      pool.push({
+        id: 'by-decade',
+        title: decadeName,
+        subtitle: ' Music',
+        tag: 'BY DECADE',
+        description: `Enjoy local tracks from the ${decadeName}`,
+        gradient: 'from-[#ff9966] to-[#ff5e62]',
+        songs: decadeSongs
+      })
+    }
+
+    // 8. Aura Exclusive
+    pool.push({
+      id: 'aura-exclusive',
+      title: 'Pure Audio',
+      subtitle: ' Music',
+      tag: 'AURA EXCLUSIVE',
+      description: 'Experience studio quality offline playback and clean response',
+      gradient: 'from-[#e57a00] to-[#b83a00]',
+      songs: [...songs].sort(() => Math.random() - 0.5)
+    })
+
+    // 9. TTML Karaoke
+    const songsWithLyrics = songs.filter(s => s.lyrics)
+    if (songsWithLyrics.length > 0) {
+      pool.push({
+        id: 'ttml-karaoke',
+        title: 'Karaoke',
+        subtitle: ' Music',
+        tag: 'TTML KARAOKE',
+        description: 'Sing along with real-time synchronized local lyrics',
+        gradient: 'from-[#4e54c8] to-[#8f94fb]',
+        songs: songsWithLyrics
+      })
+    }
+
+    // 10. Favorite Artists
+    const favSongs = songs.filter(s => s.isFavorite)
+    const favArtists = Array.from(new Set(favSongs.map(s => s.artist))).filter(Boolean)
+    if (favArtists.length > 0) {
+      const selectedFavArtist = favArtists[Math.floor(Math.random() * favArtists.length)]
+      const artistSongs = songs.filter(s => s.artist === selectedFavArtist)
+      pool.push({
+        id: 'favorite-artists',
+        title: selectedFavArtist,
+        subtitle: ' Music',
+        tag: 'FAVORITE ARTIST',
+        description: `Enjoy tracks by your favorite artist: ${selectedFavArtist}`,
+        gradient: 'from-[#11998e] to-[#38ef7d]',
+        songs: artistSongs
+      })
+    }
+
+    // Shuffle the pool and take 4
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    
+    // Fallback to static mock cards if library is completely empty
+    if (songs.length === 0) {
+      return [
+        {
+          id: 'heavy-rotation',
+          title: 'Heavy Rotation',
+          subtitle: ' Music',
+          tag: 'MADE FOR YOU',
+          description: 'Your scanned library files and favorite recommendations',
+          gradient: 'from-[#fa7c30] to-[#fa586a]',
+          songs: []
+        },
+        {
+          id: 'valiant',
+          title: 'Valiant',
+          subtitle: 'ILAIYARAASA',
+          tag: 'NEW RELEASE',
+          description: "Ilaiyaraaja's Symphony Number 1 - Valiant",
+          gradient: 'from-[#121212] to-[#000000]',
+          songs: [],
+          backgroundImage: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&h=800&fit=crop'
+        },
+        {
+          id: 'featuring-anirudh',
+          title: 'Featuring Anirudh',
+          subtitle: ' Music',
+          tag: 'FEATURING ANIRUDH RAVICHANDER',
+          description: 'Anirudh Ravichander & Similar Artists',
+          gradient: 'from-[#e57a00] to-[#b83a00]',
+          songs: [],
+          avatars: [
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop',
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
+            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop'
+          ]
+        },
+        {
+          id: 'anil-station',
+          title: "Anil Shebin's Station",
+          subtitle: ' Music',
+          tag: 'MADE FOR YOU',
+          description: "Anil Shebin's Station",
+          gradient: 'from-[#e52d80] to-[#b21c45]',
+          songs: [],
+          isStation: true
+        }
+      ]
+    }
+
+    return shuffled.slice(0, 4)
+  }, [librarySongs])
+
+  const handlePlayTopPick = useCallback((card: any) => {
+    if (card.songs && card.songs.length > 0) {
+      playSongDirect(card.songs[0], card.songs)
+    }
+  }, [playSongDirect])
+
+  const handlePlaySongDirect = useCallback((song: any) => {
+    playSongDirect(song, [song])
   }, [playSongDirect])
 
   return (
@@ -137,214 +292,165 @@ export const ListenNow: React.FC = () => {
         <h2 className="text-[20px] font-bold text-white tracking-tight">Top Picks for You</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-          {/* Card 1: Heavy Rotation */}
-          <div
-            onClick={() => handlePlayCollection("Heavy Rotation")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#fa7c30] to-[#fa586a] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 transform-gpu"
-            style={{ contain: 'layout style paint' }}
-          >
-            <div className="flex justify-end text-white/90 text-xs font-semibold select-none">
-               Music
-            </div>
-
-            <div className="my-auto flex flex-col items-center justify-center text-center">
-              <h3 className="text-[42px] font-black text-white leading-none tracking-tight">
-                Heavy
-              </h3>
-              <h3 className="text-[42px] font-black text-white leading-none tracking-tight mt-1">
-                Rotation
-              </h3>
-            </div>
-
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">Made for You</span>
-              <p className="text-xs text-white font-medium line-clamp-2 leading-tight">
-                Your scanned library files and favorite recommendations
-              </p>
-            </div>
-
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 active:scale-95 z-20">
-              <Play size={20} fill="currentColor" className="ml-0.5" />
-            </div>
-          </div>
-
-          {/* Card 2: Valiant */}
-          <div
-            onClick={() => handlePlayCollection("Valiant")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-[#121212] border border-white/5 p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 transform-gpu"
-            style={{ contain: 'layout style paint' }}
-          >
+          {topPicks.map((card) => (
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-45"
-              style={{ backgroundImage: `url('https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&h=800&fit=crop')` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/10" />
-
-            <div className="z-10 flex flex-col gap-0.5">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#d8c395] leading-none">ILAIYARAASA</span>
-            </div>
-
-            <div className="z-10 my-auto flex flex-col items-center justify-center text-center">
-              <h3 className="text-[34px] font-extrabold text-[#faecce] leading-none tracking-tighter uppercase font-serif">
-                Valiant
-              </h3>
-              <span className="text-[10px] font-semibold text-[#ebd7b1] tracking-widest uppercase mt-2 border-t border-[#d8c395]/45 pt-1.5 px-3">
-                Symphony Number 1
-              </span>
-            </div>
-
-            <div className="z-10 flex flex-col gap-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#d8c395]">New Release</span>
-              <h4 className="text-xs text-white font-semibold line-clamp-1 leading-none">
-                Ilaiyaraaja's Symphony Number 1 - Valiant
-              </h4>
-              <p className="text-[11px] text-zinc-400 leading-none mt-1">Ilaiyaraaja</p>
-            </div>
-
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 active:scale-95 z-20">
-              <Play size={20} fill="currentColor" className="ml-0.5" />
-            </div>
-          </div>
-
-          {/* Card 3: Anirudh Feature Station */}
-          <div
-            onClick={() => handlePlayCollection("Featuring Anirudh")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#e57a00] to-[#b83a00] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300 transform-gpu"
-            style={{ contain: 'layout style paint' }}
-          >
-            <div className="flex justify-end text-white/90 text-xs font-semibold select-none">
-               Music
-            </div>
-
-            <div className="my-auto relative w-36 h-28 mx-auto z-10 flex items-center justify-center">
-              <div className="absolute left-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop" className="object-cover w-full h-full" loading="lazy" />
-              </div>
-              <div className="absolute right-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop" className="object-cover w-full h-full" loading="lazy" />
-              </div>
-              <div className="absolute top-0 w-16 h-16 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
-                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop" className="object-cover w-full h-full" loading="lazy" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">Featuring Anirudh Ravichander</span>
-              <p className="text-xs text-white font-bold line-clamp-1 leading-tight">
-                Anirudh Ravichander & Similar Artists
-              </p>
-            </div>
-
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-              <Play size={20} fill="currentColor" className="ml-0.5" />
-            </div>
-          </div>
-
-          {/* Card 4: Station */}
-          <div
-            onClick={() => handlePlayCollection("Anil Shebin's Station")}
-            className="group relative rounded-lg overflow-hidden aspect-[3/4] bg-gradient-to-b from-[#e52d80] to-[#b21c45] p-6 flex flex-col justify-between cursor-pointer shadow-lg transition-shadow duration-300 transform-gpu"
-            style={{ contain: 'layout style paint' }}
-          >
-            <div className="flex justify-end text-white/90 text-xs font-semibold select-none">
-               Music
-            </div>
-
-            <div className="my-auto flex items-center justify-center">
-              <svg viewBox="0 0 100 100" className="w-24 h-24 text-white drop-shadow-xl opacity-90">
-                <polygon points="25,15 75,50 25,85" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                <polygon points="50,30 75,50 50,70" fill="currentColor" />
-              </svg>
-            </div>
-
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">Made for You</span>
-              <p className="text-xs text-white font-bold line-clamp-1 leading-tight">
-                Anil Shebin's Station
-              </p>
-            </div>
-
-            <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-              <Play size={20} fill="currentColor" className="ml-0.5" />
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Recently Played Section */}
-      <div className="flex flex-col gap-4">
-        <div
-          onClick={() => handlePlayCollection("Recently Played")}
-          className="flex items-center gap-1 group cursor-pointer w-fit"
-        >
-          <h2 className="text-[20px] font-bold text-white tracking-tight group-hover:text-white transition-colors duration-150">
-            Recently Played
-          </h2>
-          <ChevronRight size={22} className="text-zinc-500 group-hover:text-white transition-colors duration-150 mt-0.5" />
-        </div>
-
-        {/* Square Album Grid — Enforced exactly 5 in a line */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-5 gap-y-7">
-          {recentlyPlayedAlbums.map((album) => (
-            <div
-              key={album.id}
-              onClick={() => handleCardClick(album)}
-              className="flex flex-col group cursor-pointer transform-gpu"
+              key={card.id}
+              onClick={() => handlePlayTopPick(card)}
+              className={`group relative rounded-[6px] overflow-hidden aspect-[3/4] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 transform-gpu bg-gradient-to-b ${card.gradient}`}
               style={{ contain: 'layout style paint' }}
             >
-              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/[0.06] shadow-md transition-shadow duration-300 group-hover:shadow-xl">
-                {album.coverUrl ? (
-                  <img
-                    src={album.coverUrl}
-                    alt={album.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                    loading="lazy"
+              {card.backgroundImage && (
+                <>
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-45"
+                    style={{ backgroundImage: `url('${card.backgroundImage}')` }}
                   />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                    <Disc size={40} className="text-zinc-700" />
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/10" />
+                </>
+              )}
+
+              <div className="z-10 flex items-center justify-end gap-1 text-white/95 text-xs font-semibold select-none">
+                {card.subtitle.includes('Music') && (
+                  <svg viewBox="0 0 32 32" className="w-3.5 h-3.5 text-white shrink-0 fill-current mr-0.5" aria-hidden="true">
+                    <rect x="2" y="16" width="2.4" height="12" rx="1.2" />
+                    <rect x="6" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                    <rect x="10" y="4.5" width="2.4" height="16" rx="1.2" />
+                    <rect x="14" y="0" width="2.4" height="14" rx="1.2" />
+                    <rect x="18" y="4.5" width="2.4" height="16" rx="1.2" />
+                    <rect x="22" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                    <rect x="26" y="16" width="2.4" height="12" rx="1.2" />
+                  </svg>
                 )}
-
-                {/* Hover Play and Menu Overlays */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-between p-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handlePlayAlbumDirect(album)
-                    }}
-                    className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
-                  >
-                    <Play size={14} fill="white" className="ml-0.5 text-white" />
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                    }}
-                    className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
-                </div>
+                <span>{card.subtitle.replace('', '').trim()}</span>
               </div>
 
-              <div className="flex flex-col mt-2.5 min-w-0">
-                <span className="text-[12px] font-bold text-zinc-100 truncate block leading-snug group-hover:text-white transition-colors duration-150">
-                  {album.title}
-                </span>
-                <span className="text-[10.5px] text-zinc-400 font-light truncate mt-0.5 leading-snug">
-                  {album.artist}
-                </span>
+              {card.avatars && (
+                <div className="my-auto relative w-36 h-28 mx-auto z-10 flex items-center justify-center">
+                  <div className="absolute left-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
+                    <img src={card.avatars[0]} className="object-cover w-full h-full" loading="lazy" />
+                  </div>
+                  <div className="absolute right-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
+                    <img src={card.avatars[1]} className="object-cover w-full h-full" loading="lazy" />
+                  </div>
+                  <div className="absolute top-0 w-16 h-16 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
+                    <img src={card.avatars[2]} className="object-cover w-full h-full" loading="lazy" />
+                  </div>
+                </div>
+              )}
+
+              {card.isStation && (
+                <div className="my-auto flex items-center justify-center">
+                  <svg viewBox="0 0 100 100" className="w-24 h-24 text-white drop-shadow-xl opacity-90">
+                    <polygon points="25,15 75,50 25,85" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <polygon points="50,30 75,50 50,70" fill="currentColor" />
+                  </svg>
+                </div>
+              )}
+
+              {!card.avatars && !card.isStation && !card.backgroundImage && (
+                <div className="my-auto flex flex-col items-center justify-center text-center z-10">
+                  <h3 className="text-[32px] font-black text-white leading-none tracking-tight break-words max-w-full">
+                    {card.title}
+                  </h3>
+                </div>
+              )}
+
+              <div className="z-10 flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">{card.tag}</span>
+                <p className="text-xs text-white font-medium line-clamp-2 leading-tight">
+                  {card.description}
+                </p>
+              </div>
+
+              <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 active:scale-95 z-20">
+                <Play size={20} fill="currentColor" className="ml-0.5" />
               </div>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Recently Played Section (Only visible if history exists) */}
+      {recentlyPlayedSongs.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-1 group cursor-pointer w-fit">
+            <h2 className="text-[20px] font-bold text-white tracking-tight group-hover:text-white transition-colors duration-150">
+              Recently Played
+            </h2>
+            <ChevronRight size={22} className="text-zinc-500 group-hover:text-white transition-colors duration-150 mt-0.5" />
+          </div>
+
+          {/* Square Song Grid — Enforced exactly 5 in a line */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-5 gap-y-7">
+            {recentlyPlayedSongs.map((song) => (
+              <div
+                key={song.id}
+                onClick={() => handlePlaySongDirect(song)}
+                className="flex flex-col group cursor-pointer transform-gpu"
+                style={{ contain: 'layout style paint' }}
+              >
+                <div className="relative aspect-square w-full rounded-[6px] overflow-hidden bg-zinc-900 border border-white/[0.06] shadow-md transition-shadow duration-300 group-hover:shadow-xl">
+                  {song.coverUrl ? (
+                    <img
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                      <Disc size={40} className="text-zinc-700" />
+                    </div>
+                  )}
+
+                  {/* Hover Play and Menu Overlays */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-between p-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handlePlaySongDirect(song)
+                      }}
+                      className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
+                    >
+                      <Play size={14} fill="white" className="ml-0.5 text-white" />
+                    </button>
+
+                    <button
+                      onClick={(e) => handleSongOptionsClick(e, song)}
+                      className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col mt-2.5 min-w-0">
+                  <span className="text-[12px] font-bold text-zinc-100 truncate block leading-snug group-hover:text-white transition-colors duration-150">
+                    {song.title}
+                  </span>
+                  <span className="text-[10.5px] text-zinc-400 font-light truncate mt-0.5 leading-snug">
+                    {song.artist}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Song Context Menu Portal */}
+      {songMenuCoords && activeSong && (
+        <SongContextMenu
+          song={activeSong}
+          coords={songMenuCoords}
+          onClose={() => {
+            setSongMenuCoords(null)
+            setActiveSong(null)
+          }}
+        />
+      )}
     </div>
   )
 }
+
 export default ListenNow

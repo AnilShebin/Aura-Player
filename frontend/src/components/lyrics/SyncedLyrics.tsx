@@ -134,7 +134,7 @@ const LyricLineItem = React.memo<LyricLineItemProps>(({
       ) : (
         <div className={`w-full text-left ${compact ? 'py-2.5' : 'pl-6 pr-12'}`}>
           <div className="primary-vocals">
-            <p className={`tracking-tight break-words whitespace-pre-wrap text-foreground cursor-pointer ${compact ? 'text-[26px] font-light leading-[1.2]' : 'text-[30px] md:text-[40px] lg:text-[48px] leading-[1.1] font-medium'}`}>
+            <p className={`tracking-tight break-words whitespace-pre-wrap text-foreground cursor-pointer ${compact ? 'text-[26px] font-light leading-[1.2]' : 'text-[30px] md:text-[40px] lg:text-[48px] leading-[1.1] font-light'}`}>
               {showOriginal ? line.original : (line.translation || line.original)}
             </p>
           </div>
@@ -400,3 +400,4 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
     </div>
   )
 }
+

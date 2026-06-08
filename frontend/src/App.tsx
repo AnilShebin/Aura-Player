@@ -11,8 +11,12 @@ import { Albums } from '@/pages/Albums'
 import { AlbumDetail } from '@/pages/AlbumDetail'
 import { Songs } from '@/pages/Songs'
 import { Settings } from '@/pages/Settings'
+import { Search } from '@/pages/Search'
+import { Playlists } from '@/pages/Playlists'
+import { PlaylistDetail } from '@/pages/PlaylistDetail'
+import { CreatePlaylistModal } from '@/components/playlist/CreatePlaylistModal'
+import { SongPropertiesModal } from '@/components/songs/SongPropertiesModal'
 import { PlayerBar } from '@/components/player-bar/audio/PlayerBar'
-import { Button } from '@/components/ui/button'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { PanelLeft } from 'lucide-react'
@@ -22,6 +26,7 @@ import { IsFirstTime, GetFolders } from '@/services/settingsService'
 import { GetSongs, ScanLibrary, GetAlbums } from '@/services/libraryService'
 import { OnboardingWelcome } from '@/components/settings/OnboardingWelcome'
 import { useSmoothScroll } from '@/hooks/useSmoothScroll'
+import { UpdateDialog } from '@/components/settings/UpdateDialog'
 
 
 const checkIfMaximized = (): boolean => {
@@ -32,20 +37,22 @@ const checkIfMaximized = (): boolean => {
 }
 
 function App() {
-  const playingSong = useMusicStore(state => state.playingSong)
-  const showAmbientGlow = useMusicStore(state => state.showAmbientGlow)
-  const setShowAmbientGlow = useMusicStore(state => state.setShowAmbientGlow)
   const sidebarCollapsed = useMusicStore(state => state.sidebarCollapsed)
   const setSidebarCollapsed = useMusicStore(state => state.setSidebarCollapsed)
   const showLyrics = useMusicStore(state => state.showLyrics)
-  const setShowLyrics = useMusicStore(state => state.setShowLyrics)
   const showQueue = useMusicStore(state => state.showQueue)
-  const setShowQueue = useMusicStore(state => state.setShowQueue)
-  const playQueue = useMusicStore(state => state.playQueue)
-  const playSongDirect = useMusicStore(state => state.playSongDirect)
   const currentTab = useMusicStore(state => state.currentTab)
   const isMaximized = useMusicStore(state => state.isMaximized)
   const setIsMaximized = useMusicStore(state => state.setIsMaximized)
+
+  const isCreatePlaylistOpen = useMusicStore(state => state.isCreatePlaylistOpen)
+  const setCreatePlaylistOpen = useMusicStore(state => state.setCreatePlaylistOpen)
+  const createPlaylist = useMusicStore(state => state.createPlaylist)
+
+  const isPropertiesOpen = useMusicStore(state => state.isPropertiesOpen)
+  const setPropertiesOpen = useMusicStore(state => state.setPropertiesOpen)
+  const propertiesSong = useMusicStore(state => state.propertiesSong)
+  const updateSongMetadata = useMusicStore(state => state.updateSongMetadata)
 
   const mainRef = useRef<HTMLDivElement>(null)
   useSmoothScroll(mainRef, currentTab !== 'songs' && currentTab !== 'albums')
@@ -134,6 +141,17 @@ function App() {
       .catch((err) => {
         console.error('Failed to check first time:', err)
       })
+  }, [])
+
+  // Auto update check on startup
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const autoCheck = useMusicStore.getState().autoCheckUpdates
+      if (autoCheck) {
+        useMusicStore.getState().checkForUpdates(false).catch(console.error)
+      }
+    }, 4000)
+    return () => clearTimeout(timer)
   }, [])
 
   // Subscribe to native libmpv playback events from backend
@@ -280,7 +298,7 @@ function App() {
             {/* so opening a drawer doesn't visually shift the content center.                          */}
             <main
               ref={mainRef}
-              className={`flex-1 ${currentTab === 'songs' || currentTab === 'albums' ? 'overflow-hidden' : 'overflow-y-auto'} relative h-full pb-0 custom-scrollbar min-w-0 transition-[padding] duration-200 ease-linear ${
+              className={`flex-1 ${currentTab === 'songs' || currentTab === 'albums' || currentTab === 'search' ? 'overflow-hidden' : 'overflow-y-auto'} relative h-full pb-0 custom-scrollbar min-w-0 transition-[padding] duration-200 ease-linear ${
                 isMaximized && !showLyrics && !showQueue ? 'px-[67px]' : 'px-8'
               }`}
             >
@@ -296,88 +314,38 @@ function App() {
                 <Songs />
               ) : currentTab === 'settings' ? (
                 <Settings />
+              ) : currentTab === 'search' ? (
+                <Search />
+              ) : currentTab === 'playlists' ? (
+                <Playlists />
+              ) : currentTab === 'playlist-detail' ? (
+                <PlaylistDetail />
               ) : (
-                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] w-full">
-                  {playingSong && (
-                    <div className="relative z-10 w-full max-w-md p-6 bg-secondary/35 backdrop-blur-xl border border-border/30 rounded-2xl shadow-2xl flex flex-col items-center text-center transition-all duration-300">
-
-                      {/* Artwork Cover */}
-                      <div className="relative w-56 h-56 mb-6 rounded-xl overflow-hidden shadow-lg border border-border/10 group">
-                        <img
-                          src={playingSong.coverUrl}
-                          alt={playingSong.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-
-                      {/* Song Meta Info */}
-                      <h2 className="text-xl font-bold tracking-tight text-foreground mb-1 line-clamp-1">
-                        {playingSong.title}
-                      </h2>
-                      <p className="text-sm text-muted-foreground font-medium mb-6 line-clamp-1">
-                        {playingSong.artist}
-                      </p>
-
-                      {/* Dynamic Controls */}
-                      <div className="w-full flex flex-col gap-4">
-                        <div className="flex justify-center gap-2">
-                          {playQueue.map((song, idx) => (
-                            <Button
-                              key={song.id}
-                              variant={playingSong?.id === song.id ? "default" : "secondary"}
-                              size="sm"
-                              onClick={() => playSongDirect(song, playQueue)}
-                              className="text-xs transition-colors duration-200"
-                            >
-                              Track {idx + 1}
-                            </Button>
-                          ))}
-                        </div>
-
-                        <hr className="border-border/30 my-1" />
-
-                        {/* Panel Drawer Toggles */}
-                        <div className="flex flex-col gap-2.5 text-sm px-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground font-medium">Ambient Background Glow</span>
-                            <Button
-                              variant={showAmbientGlow ? "default" : "outline"}
-                              size="xs"
-                              onClick={() => setShowAmbientGlow(!showAmbientGlow)}
-                              className="text-xs min-w-[80px]"
-                            >
-                              {showAmbientGlow ? "Enabled" : "Disabled"}
-                            </Button>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground font-medium">Lyrics Drawer Panel</span>
-                            <Button
-                              variant={showLyrics ? "default" : "outline"}
-                              size="xs"
-                              onClick={() => setShowLyrics(!showLyrics)}
-                              className="text-xs min-w-[80px]"
-                            >
-                              {showLyrics ? "Active" : "Closed"}
-                            </Button>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground font-medium">Playback Queue Drawer</span>
-                            <Button
-                              variant={showQueue ? "default" : "outline"}
-                              size="xs"
-                              onClick={() => setShowQueue(!showQueue)}
-                              className="text-xs min-w-[80px]"
-                            >
-                              {showQueue ? "Active" : "Closed"}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                    </div>
-                  )}
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)] w-full text-center px-4 select-none">
+                  <span className="text-[#fa586a] opacity-90 mb-4">
+                    <svg height="40" viewBox="0 0 22 20" width="44" xmlns="http://www.w3.org/2000/svg" className="fill-current" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="aura-logo-grad-placeholder" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#a855f7" />
+                          <stop offset="100%" stopColor="#fa586a" />
+                        </linearGradient>
+                      </defs>
+                      <path 
+                        d="M1 10h2.5c1.2 0 1.8-7.5 3-7.5s1.8 14 3 14 1.8-11 3-11 1.8 8 3 8 1.8-3.5 3-3.5" 
+                        stroke="url(#aura-logo-grad-placeholder)" 
+                        strokeWidth="2.2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        fill="none"
+                      />
+                    </svg>
+                  </span>
+                  <h3 className="text-[17px] font-medium text-foreground mb-1">
+                    {currentTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                  </h3>
+                  <p className="text-[13px] text-muted-foreground max-w-[280px]">
+                    This section is under construction. Select another view from the sidebar to listen.
+                  </p>
                 </div>
               )}
             </main>
@@ -401,6 +369,28 @@ function App() {
 
           {/* Fullscreen Full Page Player Overlay */}
           <FullscreenPlayer />
+
+          {/* Global Create Playlist Modal */}
+          <CreatePlaylistModal
+            isOpen={isCreatePlaylistOpen}
+            onClose={() => setCreatePlaylistOpen(false)}
+            onCreate={(name, description, coverUrl) => createPlaylist(name, coverUrl, description)}
+          />
+
+          {/* Global Song Properties Modal */}
+          <SongPropertiesModal
+            isOpen={isPropertiesOpen}
+            onClose={() => setPropertiesOpen(false, null)}
+            song={propertiesSong}
+            onSave={(updates) => {
+              if (propertiesSong) {
+                updateSongMetadata(propertiesSong.id, updates)
+              }
+            }}
+          />
+
+          {/* Global Update Dialog Modal */}
+          <UpdateDialog />
         </div>
       </SidebarProvider>
     </TooltipProvider>
@@ -408,3 +398,5 @@ function App() {
 }
 
 export default App
+
+
