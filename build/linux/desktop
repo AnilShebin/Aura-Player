@@ -1,13 +1,10 @@
 [Desktop Entry]
 Version=1.0
-Name=My Product
-Comment=A Aura-Music application
-# The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/aura-music.exe %u
+Name=Aura Music
+Comment=Aura Lossless Music Player
+Exec=Aura-Music
+Icon=aura-music
 Terminal=false
 Type=Application
-Icon=aura-music.exe
-Categories=Utility;
-StartupWMClass=aura-music.exe
-
- 
+Categories=AudioVideo;Audio;Player;GTK;
+StartupWMClass=Aura-Music
