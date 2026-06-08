@@ -66,8 +66,13 @@ jobs:
       - name: Build Frontend
         run: |
           cd frontend
-          npm install
+          npm ci
           npm run build
+
+      # Discard any modified files (e.g. package-lock.json modified by npm ci/install) so git is clean
+      - name: Clean Git Workspace
+        run: |
+          git checkout -- .
 
       # Run GoReleaser to compile and package binaries and debian packages locally (without publish)
       - name: Run GoReleaser
