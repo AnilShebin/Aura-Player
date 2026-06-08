@@ -1,0 +1,29 @@
+version: 2
+
+project_name: Aura-Music
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: aura-windows
+    binary: Aura-Music
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -H=windowsgui -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
+    dir: .
+
+archives:
+  - format: zip
+    name_template: "Aura-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256

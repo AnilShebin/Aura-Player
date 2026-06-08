@@ -1,0 +1,29 @@
+version: 2
+
+project_name: Aura-Music
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: aura-macos
+    binary: Aura-Music
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
+    dir: .
+
+archives:
+  - format: tar.gz
+    name_template: "Aura-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256

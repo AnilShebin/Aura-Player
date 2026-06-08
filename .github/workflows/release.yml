@@ -17,13 +17,13 @@ jobs:
         include:
           - os: ubuntu-22.04
             goos: linux
-            goreleaser_id: aura-linux
+            goreleaser_config: .goreleaser.linux.yml
           - os: macos-13
             goos: darwin
-            goreleaser_id: aura-macos
+            goreleaser_config: .goreleaser.macos.yml
           - os: windows-latest
             goos: windows
-            goreleaser_id: aura-windows
+            goreleaser_config: .goreleaser.windows.yml
 
     steps:
       - name: Checkout Code
@@ -75,7 +75,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --skip=publish --id ${{ matrix.goreleaser_id }}
+          args: release --clean --skip=publish --config ${{ matrix.goreleaser_config }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}

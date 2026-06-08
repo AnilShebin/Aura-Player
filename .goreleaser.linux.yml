@@ -7,32 +7,6 @@ before:
     - go mod tidy
 
 builds:
-  - id: aura-windows
-    binary: Aura-Music
-    goos:
-      - windows
-    goarch:
-      - amd64
-      - arm64
-    env:
-      - CGO_ENABLED=0
-    ldflags:
-      - -H=windowsgui -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
-    dir: .
-
-  - id: aura-macos
-    binary: Aura-Music
-    goos:
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    env:
-      - CGO_ENABLED=1
-    ldflags:
-      - -s -w -X changeme/internal/updater.CurrentVersion={{.Version}}
-    dir: .
-
   - id: aura-linux
     binary: Aura-Music
     goos:
@@ -48,9 +22,6 @@ builds:
 archives:
   - format: tar.gz
     name_template: "Aura-{{ .Os }}-{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
 
 nfpms:
   - id: debian-packages
@@ -76,12 +47,3 @@ nfpms:
 checksum:
   name_template: 'checksums.txt'
   algorithm: sha256
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^style:'
-      - 'chore'
