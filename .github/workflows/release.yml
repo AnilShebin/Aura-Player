@@ -89,6 +89,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
 
+      # Install NSIS for building the Setup EXE installer
+      - name: Install NSIS
+        if: matrix.goos == 'windows'
+        shell: pwsh
+        run: |
+          choco install nsis --no-progress -y
+          # Refresh PATH so makensis is available in subsequent steps
+          $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
+          Write-Host "NSIS installed at: $(Get-Command makensis -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source)"
+
       # Custom packaging for Windows MSIX (x64 & ARM64)
       - name: Package Windows MSIX
         if: matrix.goos == 'windows'
@@ -175,17 +185,31 @@ jobs:
           # Build NSIS Setup Installers (EXE)
           Write-Host "Generating WebView2 bootstrapper..."
           wails3 generate webview2bootstrapper -dir build/windows/nsis
-          
+
+          # Locate makensis (Chocolatey installs to Program Files (x86)\NSIS)
+          $makensis = "C:\Program Files (x86)\NSIS\makensis.exe"
+          if (-not (Test-Path $makensis)) {
+            $makensis = Get-Command makensis -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+          }
+          if (-not $makensis) { throw "makensis not found — NSIS installation may have failed" }
+          Write-Host "Using makensis: $makensis"
+
           Write-Host "Compiling x64 NSIS Installer..."
-          makensis -DARG_WAILS_AMD64_BINARY="$binDirAmd64\Aura-Music.exe" -DARG_WAILS_DLL_PATH="build/windows/libmpv-2.dll" build/windows/nsis/project.nsi
+          & $makensis "-DARG_WAILS_AMD64_BINARY=$binDirAmd64\Aura-Music.exe" "-DARG_WAILS_DLL_PATH=build/windows/libmpv-2.dll" build/windows/nsis/project.nsi
           if (Test-Path "bin/Aura-Music-amd64-installer.exe") {
             Copy-Item "bin/Aura-Music-amd64-installer.exe" -Destination "dist/Aura-Music-x64-Setup.exe" -Force
+          } else {
+            Write-Warning "x64 NSIS installer output not found, checking alternate paths..."
+            Get-ChildItem bin/ -Recurse -Filter "*.exe" | Select-Object FullName
           }
-          
+
           Write-Host "Compiling ARM64 NSIS Installer..."
-          makensis -DARG_WAILS_ARM64_BINARY="$binDirArm64\Aura-Music.exe" build/windows/nsis/project.nsi
+          & $makensis "-DARG_WAILS_ARM64_BINARY=$binDirArm64\Aura-Music.exe" build/windows/nsis/project.nsi
           if (Test-Path "bin/Aura-Music-arm64-installer.exe") {
             Copy-Item "bin/Aura-Music-arm64-installer.exe" -Destination "dist/Aura-Music-arm64-Setup.exe" -Force
+          } else {
+            Write-Warning "ARM64 NSIS installer output not found, checking alternate paths..."
+            Get-ChildItem bin/ -Recurse -Filter "*.exe" | Select-Object FullName
           }
 
       # Custom packaging for macOS DMGs (AMD64 & ARM64)
