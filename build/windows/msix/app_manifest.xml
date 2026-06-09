@@ -10,7 +10,7 @@
   <Identity 
     Name="AnilShebinLabs.AuraMusicPlayer"
     Publisher="CN=09B81860-F1BD-4EC7-A974-EFF28D07F2B4"
-    Version="1.0.5.0" 
+    Version="1.0.6.0" 
     ProcessorArchitecture="x64" />
   
   <Properties>
