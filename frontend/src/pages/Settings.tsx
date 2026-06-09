@@ -4,6 +4,7 @@ import { useMusicStore } from '@/stores/musicStore'
 import { Dialogs } from '@wailsio/runtime'
 import { AddFolder, DeleteFolder, GetFolders } from '@/services/settingsService'
 import { ScanLibrary, GetSongs, GetAlbums } from '@/services/libraryService'
+import { GetCurrentVersion } from '@/services/updaterService'
 
 type SettingSection = 'main' | 'general' | 'playback' | 'restrictions' | 'files' | 'advanced'
 
@@ -64,6 +65,12 @@ export const Settings: React.FC = () => {
       loadFolders()
     }
   }, [activeSection])
+
+  const [currentVersion, setCurrentVersion] = useState('1.0.0')
+
+  useEffect(() => {
+    GetCurrentVersion().then(setCurrentVersion).catch(console.error)
+  }, [])
 
   const loadFolders = async () => {
     try {
@@ -366,7 +373,7 @@ export const Settings: React.FC = () => {
             {/* Current Version */}
             <div className="flex items-center justify-between">
               <span className="text-[12.5px] text-zinc-300 font-light">Current Version</span>
-              <span className="text-[12.5px] text-zinc-400 font-bold bg-zinc-800/60 px-2.5 py-0.5 rounded border border-white/5">1.0.0</span>
+              <span className="text-[12.5px] text-zinc-400 font-bold bg-zinc-800/60 px-2.5 py-0.5 rounded border border-white/5">{currentVersion}</span>
             </div>
 
             {/* Automatically Check Toggles */}
