@@ -171,16 +171,30 @@ func (u *UpdaterService) DownloadAndInstallUpdate(downloadURL string, assetName 
 			os.Exit(0)
 		}
 	case "linux":
-		currentExe, err := os.Executable()
-		if err == nil && strings.HasSuffix(strings.ToLower(assetName), ".appimage") {
-			bakFile := currentExe + ".bak"
+		appImagePath := os.Getenv("APPIMAGE")
+		if appImagePath != "" && strings.HasSuffix(strings.ToLower(assetName), ".appimage") {
+			bakFile := appImagePath + ".bak"
 			_ = os.Remove(bakFile)
-			if err := os.Rename(currentExe, bakFile); err == nil {
-				if err := copyFile(tempFile, currentExe); err == nil {
-					_ = os.Chmod(currentExe, 0755)
-					cmd := exec.Command(currentExe)
+			if err := os.Rename(appImagePath, bakFile); err == nil {
+				if err := copyFile(tempFile, appImagePath); err == nil {
+					_ = os.Chmod(appImagePath, 0755)
+					cmd := exec.Command(appImagePath)
 					_ = cmd.Start()
 					os.Exit(0)
+				}
+			}
+		} else {
+			currentExe, err := os.Executable()
+			if err == nil {
+				bakFile := currentExe + ".bak"
+				_ = os.Remove(bakFile)
+				if err := os.Rename(currentExe, bakFile); err == nil {
+					if err := copyFile(tempFile, currentExe); err == nil {
+						_ = os.Chmod(currentExe, 0755)
+						cmd := exec.Command(currentExe)
+						_ = cmd.Start()
+						os.Exit(0)
+					}
 				}
 			}
 		}
