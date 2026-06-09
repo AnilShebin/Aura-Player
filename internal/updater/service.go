@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const CurrentVersion = "1.0.0"
+var CurrentVersion = "1.0.0"
 const RepoOwner = "AnilShebin"
 const RepoName = "Aura-Player"
 
@@ -85,7 +85,7 @@ func (u *UpdaterService) CheckForUpdates() (*UpdateInfo, error) {
 		return &UpdateInfo{Available: false, LatestVersion: release.TagName}, nil
 	}
 
-	// Match asset based on OS
+	// Match asset based on OS and Architecture
 	var downloadURL string
 	var assetName string
 	var osSuffix string
@@ -99,11 +99,44 @@ func (u *UpdaterService) CheckForUpdates() (*UpdateInfo, error) {
 		osSuffix = ".appimage"
 	}
 
+	archTerms := []string{}
+	if runtime.GOARCH == "amd64" {
+		archTerms = []string{"x64", "x86_64", "amd64"}
+	} else if runtime.GOARCH == "arm64" {
+		archTerms = []string{"arm64", "aarch64"}
+	}
+
+	// First pass: match both OS suffix and architecture terms
 	for _, asset := range release.Assets {
-		if strings.HasSuffix(strings.ToLower(asset.Name), osSuffix) {
-			downloadURL = asset.DownloadURL
-			assetName = asset.Name
-			break
+		nameLower := strings.ToLower(asset.Name)
+		if strings.HasSuffix(nameLower, osSuffix) {
+			matchArch := false
+			if len(archTerms) == 0 {
+				matchArch = true
+			} else {
+				for _, term := range archTerms {
+					if strings.Contains(nameLower, term) {
+						matchArch = true
+						break
+					}
+				}
+			}
+			if matchArch {
+				downloadURL = asset.DownloadURL
+				assetName = asset.Name
+				break
+			}
+		}
+	}
+
+	// Second pass fallback: match OS suffix only
+	if downloadURL == "" {
+		for _, asset := range release.Assets {
+			if strings.HasSuffix(strings.ToLower(asset.Name), osSuffix) {
+				downloadURL = asset.DownloadURL
+				assetName = asset.Name
+				break
+			}
 		}
 	}
 
