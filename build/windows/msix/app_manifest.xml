@@ -10,12 +10,12 @@
   <Identity 
     Name="AnilShebin.AuraPlayer"
     Publisher="CN=AnilShebin"
-    Version="1.0.3.0" 
+    Version="1.0.4.0" 
     ProcessorArchitecture="x64" />
   
   <Properties>
     <DisplayName>Aura Music</DisplayName>
-    <PublisherDisplayName>Anil Shebin</PublisherDisplayName>
+    <PublisherDisplayName>Anil Shebin Labs</PublisherDisplayName>
     <Description>Aura Lossless Music Player</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
