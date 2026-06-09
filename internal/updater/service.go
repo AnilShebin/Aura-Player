@@ -157,12 +157,8 @@ func (u *UpdaterService) DownloadAndInstallUpdate(downloadURL string, assetName 
 	switch runtime.GOOS {
 	case "windows":
 		if strings.HasSuffix(strings.ToLower(assetName), ".exe") {
-			cmd := exec.Command(tempFile, "/SILENT")
-			if err := cmd.Start(); err != nil {
-				cmdNoSilent := exec.Command(tempFile)
-				if err := cmdNoSilent.Start(); err != nil {
-					return fmt.Errorf("failed to start windows installer: %w", err)
-				}
+			if err := runInstallerWindows(tempFile); err != nil {
+				return fmt.Errorf("failed to start windows installer with elevation: %w", err)
 			}
 			os.Exit(0)
 		}
