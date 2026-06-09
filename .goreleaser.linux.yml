@@ -38,11 +38,13 @@ nfpms:
     license: MIT
     section: sound
     priority: optional
+    dependencies:
+      - libmpv2 | libmpv1 | libmpv-dev
     contents:
       - src: build/appicon.png
         dst: /usr/share/icons/hicolor/512x512/apps/aura-music.png
-      - src: build/linux/desktop
-        dst: /usr/share/applications/aura-music.desktop
+      - src: build/linux/org.wails.aura-music.desktop
+        dst: /usr/share/applications/org.wails.aura-music.desktop
 
 checksum:
   name_template: 'checksums.txt'

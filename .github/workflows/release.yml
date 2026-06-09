@@ -206,8 +206,13 @@ jobs:
           # Find compiled Linux binary path dynamically
           bin_linux=$(ls -d dist/aura-linux_linux_amd64*/Aura-Music | head -n 1)
           cp "$bin_linux" dist/AppDir/usr/bin/Aura-Music
-          cp build/linux/desktop dist/AppDir/usr/share/applications/aura-music.desktop
+          cp build/linux/org.wails.aura-music.desktop dist/AppDir/usr/share/applications/org.wails.aura-music.desktop
           cp build/appicon.png dist/AppDir/usr/share/icons/hicolor/512x512/apps/aura-music.png || true
+          cp build/appicon.png dist/AppDir/usr/share/icons/hicolor/512x512/apps/org.wails.aura-music.png || true
+          
+          # Bundle libmpv dynamic libraries into the AppImage
+          mkdir -p dist/AppDir/usr/lib
+          cp -P /usr/lib/x86_64-linux-gnu/libmpv.so* dist/AppDir/usr/lib/
           
           ARCH=x86_64 ./linuxdeploy-x86_64.AppImage --appdir dist/AppDir --output appimage
           mv Aura*.AppImage dist/Aura-Linux-amd64.AppImage
