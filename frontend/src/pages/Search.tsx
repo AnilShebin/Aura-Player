@@ -5,7 +5,7 @@ import { Song } from '@/types/music'
 
 const CATEGORIES = [
   { name: 'Lossless Audio', query: 'Lossless', gradient: 'from-indigo-600/80 to-blue-500/80' },
-  { name: 'Dolby Atmos', query: 'Dolby', gradient: 'from-purple-600/80 to-pink-500/80' },
+  { name: 'Spatial Audio', query: 'Spatial', gradient: 'from-purple-600/80 to-pink-500/80' },
   { name: 'Hi-Res Lossless', query: 'Hi-Res Lossless', gradient: 'from-emerald-600/80 to-teal-500/80' },
   { name: 'Favorites', query: 'favorite', gradient: 'from-rose-600/80 to-pink-500/80' },
   { name: 'Pop Music', query: 'Pop', gradient: 'from-amber-500/80 to-orange-600/80' },
@@ -82,8 +82,8 @@ export const Search: React.FC = () => {
       if (queryLower === 'hi-res lossless') {
         return qualityLower === 'hi-res lossless'
       }
-      if (queryLower === 'dolby') {
-        return qualityLower.includes('dolby') || 
+      if (queryLower === 'spatial') {
+        return qualityLower.includes('spatial') || 
                codecLower.includes('ec3') || 
                codecLower.includes('ec-3') || 
                codecLower.includes('ac3') || 
@@ -115,13 +115,13 @@ export const Search: React.FC = () => {
       if (queryLower === 'hi-res lossless') {
         return qualityLower === 'hi-res lossless' || album.songs?.some(s => s.quality?.toLowerCase() === 'hi-res lossless')
       }
-      if (queryLower === 'dolby') {
-        return qualityLower.includes('dolby') || 
+      if (queryLower === 'spatial') {
+        return qualityLower.includes('spatial') || 
                codecLower.includes('ec3') || 
                codecLower.includes('ec-3') || 
                codecLower.includes('ac3') || 
                codecLower.includes('ac-3') ||
-               album.songs?.some(s => s.quality?.toLowerCase().includes('dolby') || s.codec?.toLowerCase().includes('ec3') || s.codec?.toLowerCase().includes('ec-3') || s.codec?.toLowerCase().includes('ac3') || s.codec?.toLowerCase().includes('ac-3'))
+               album.songs?.some(s => s.quality?.toLowerCase().includes('spatial') || s.codec?.toLowerCase().includes('ec3') || s.codec?.toLowerCase().includes('ec-3') || s.codec?.toLowerCase().includes('ac3') || s.codec?.toLowerCase().includes('ac-3'))
       }
 
       return (

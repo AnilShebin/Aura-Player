@@ -8,15 +8,15 @@
   IgnorableNamespaces="uap3">
   
   <Identity 
-    Name="com.example.auramusic"
-    Publisher="CN=My Company"
-    Version="0.1.0.0" 
+    Name="AnilShebin.AuraPlayer"
+    Publisher="CN=AnilShebin"
+    Version="1.0.3.0" 
     ProcessorArchitecture="x64" />
   
   <Properties>
-    <DisplayName>My Product</DisplayName>
-    <PublisherDisplayName>My Company</PublisherDisplayName>
-    <Description>A Aura-Music application</Description>
+    <DisplayName>Aura Music</DisplayName>
+    <PublisherDisplayName>Anil Shebin</PublisherDisplayName>
+    <Description>Aura Lossless Music Player</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   
@@ -29,10 +29,10 @@
   </Resources>
   
   <Applications>
-    <Application Id="com.example.auramusic" Executable="aura-music.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="AuraMusic" Executable="Aura-Music.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="My Product"
-        Description="A Aura-Music application"
+        DisplayName="Aura Music"
+        Description="Aura Lossless Music Player"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
@@ -41,15 +41,27 @@
       </uap:VisualElements>
       
       <Extensions>
-        <desktop:Extension Category="windows.fullTrustProcess" Executable="aura-music.exe" />
+        <desktop:Extension Category="windows.fullTrustProcess" Executable="Aura-Music.exe" />
         
-        
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="audiofiles">
+            <uap:SupportedFileTypes>
+              <uap:FileType>.mp3</uap:FileType>
+              <uap:FileType>.m4a</uap:FileType>
+              <uap:FileType>.flac</uap:FileType>
+              <uap:FileType>.wav</uap:FileType>
+              <uap:FileType>.ogg</uap:FileType>
+              <uap:FileType>.aac</uap:FileType>
+              <uap:FileType>.wma</uap:FileType>
+            </uap:SupportedFileTypes>
+            <uap:DisplayName>Audio File</uap:DisplayName>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
       </Extensions>
     </Application>
   </Applications>
   
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
-    
   </Capabilities>
 </Package>

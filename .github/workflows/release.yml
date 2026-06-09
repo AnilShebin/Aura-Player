@@ -53,11 +53,12 @@ jobs:
         run: |
           brew install create-dmg
 
-      # Install Windows NSIS (for setup installer packaging)
-      - name: Setup Windows NSIS
+      # Generate MSIX Assets
+      - name: Generate MSIX Assets
         if: matrix.goos == 'windows'
+        shell: pwsh
         run: |
-          choco install nsis -y
+          go run build/windows/msix_assets.go
 
       # Wails requires the frontend dist folder to be present during go build
       - name: Build Frontend
@@ -91,62 +92,88 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
 
-      # Custom packaging for Windows installers (AMD64 & ARM64)
-      - name: Package Windows Installers
+      # Custom packaging for Windows MSIX (x64 & ARM64)
+      - name: Package Windows MSIX
         if: matrix.goos == 'windows'
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          
-          # Find makensis executable path
-          $makensis = "makensis"
-          if (-not (Get-Command "makensis" -ErrorAction SilentlyContinue)) {
-            $makensis = "C:\Program Files (x86)\NSIS\makensis.exe"
-          }
-          
-          # Download WebView2 bootstrapper if needed
-          if (Test-Path "build/windows/nsis/project.nsi") {
-            $webView2Url = "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
-            $webView2Path = "build/windows/nsis/MicrosoftEdgeWebview2Setup.exe"
-            if (-not (Test-Path $webView2Path)) {
-              Write-Host "Downloading WebView2 Bootstrapper..."
-              Invoke-WebRequest -Uri $webView2Url -OutFile $webView2Path
+          if ($version -notmatch '^\d+\.\d+\.\d+\.\d+$') {
+            if ($version -match '^\d+\.\d+\.\d+$') {
+              $version = "$version.0"
+            } else {
+              $version = "1.0.2.0"
             }
           }
           
+          # Find Windows SDK tools
+          $sdkPath = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\bin"
+          $latestSdk = Get-ChildItem -Path $sdkPath | Where-Object { $_.Name -like "10.*" } | Sort-Object Name -Descending | Select-Object -First 1
+          $makeappx = Join-Path $latestSdk.FullName "x64\makeappx.exe"
+          $signtool = Join-Path $latestSdk.FullName "x64\signtool.exe"
+          if (-not (Test-Path $makeappx)) {
+            throw "makeappx.exe not found in Windows SDK path: $sdkPath"
+          }
+          
           # Extract libmpv-2.dll from version-controlled zip file
-          $dllPath = ""
           if (Test-Path "build/windows/libmpv-2.dll.zip") {
             Write-Host "Extracting libmpv-2.dll..."
             Expand-Archive -Path "build/windows/libmpv-2.dll.zip" -DestinationPath "build/windows/" -Force
-            $dllPath = @(Resolve-Path "build/windows/libmpv-2.dll")[0].Path
           }
 
-          # Package AMD64
+          # Package x64 MSIX
+          Write-Host "Preparing x64 MSIX layout..."
           $binDirAmd64 = @(Resolve-Path "dist/aura-windows_windows_amd64*")[0].Path
-          $binAmd64Path = Join-Path $binDirAmd64 "Aura-Music.exe"
+          $stageAmd64 = "dist/msix-x64"
+          New-Item -ItemType Directory -Path $stageAmd64 -Force | Out-Null
+          
+          Copy-Item "$binDirAmd64\Aura-Music.exe" -Destination $stageAmd64 -Force
           if (Test-Path "build/windows/libmpv-2.dll") {
-            Copy-Item "build/windows/libmpv-2.dll" -Destination $binDirAmd64 -Force
+            Copy-Item "build/windows/libmpv-2.dll" -Destination $stageAmd64 -Force
           }
-          if (Test-Path "build/windows/nsis/project.nsi") {
-            New-Item -ItemType Directory -Path "bin" -Force | Out-Null
-            & $makensis /DVERSION=$version /DARG_WAILS_AMD64_BINARY="$binAmd64Path" /DARG_WAILS_DLL_PATH="$dllPath" build/windows/nsis/project.nsi
-            Move-Item "bin/Aura-Music-amd64-installer.exe" "dist/Aura-Setup-Windows-x64.exe" -ErrorAction SilentlyContinue
-          }
-          Compress-Archive -Path "$binDirAmd64\*" -DestinationPath "dist/Aura-Setup-Windows-x64.zip" -Force
-
-          # Package ARM64
+          Copy-Item -Path "build/windows/msix/Assets" -Destination $stageAmd64 -Recurse -Force
+          
+          # Update manifest version and architecture
+          $manifest = [xml](Get-Content "build/windows/msix/app_manifest.xml")
+          $manifest.Package.Identity.Version = $version
+          $manifest.Package.Identity.ProcessorArchitecture = "x64"
+          $manifest.Save("$stageAmd64/AppxManifest.xml")
+          
+          Write-Host "Packing x64 MSIX..."
+          & $makeappx pack /d $stageAmd64 /p dist/Aura-Music-x64.msix
+          
+          # Package ARM64 MSIX
+          Write-Host "Preparing ARM64 MSIX layout..."
           $binDirArm64 = @(Resolve-Path "dist/aura-windows_windows_arm64*")[0].Path
-          $binArm64Path = Join-Path $binDirArm64 "Aura-Music.exe"
+          $stageArm64 = "dist/msix-arm64"
+          New-Item -ItemType Directory -Path $stageArm64 -Force | Out-Null
+          
+          Copy-Item "$binDirArm64\Aura-Music.exe" -Destination $stageArm64 -Force
           if (Test-Path "build/windows/libmpv-2.dll") {
-            Copy-Item "build/windows/libmpv-2.dll" -Destination $binDirArm64 -Force
+            Copy-Item "build/windows/libmpv-2.dll" -Destination $stageArm64 -Force
           }
-          if (Test-Path "build/windows/nsis/project.nsi") {
-            New-Item -ItemType Directory -Path "bin" -Force | Out-Null
-            & $makensis /DVERSION=$version /DARG_WAILS_ARM64_BINARY="$binArm64Path" /DARG_WAILS_DLL_PATH="$dllPath" build/windows/nsis/project.nsi
-            Move-Item "bin/Aura-Music-arm64-installer.exe" "dist/Aura-Setup-Windows-arm64.exe" -ErrorAction SilentlyContinue
-          }
-          Compress-Archive -Path "$binDirArm64\*" -DestinationPath "dist/Aura-Setup-Windows-arm64.zip" -Force
+          Copy-Item -Path "build/windows/msix/Assets" -Destination $stageArm64 -Recurse -Force
+          
+          # Update manifest version and architecture
+          $manifest = [xml](Get-Content "build/windows/msix/app_manifest.xml")
+          $manifest.Package.Identity.Version = $version
+          $manifest.Package.Identity.ProcessorArchitecture = "arm64"
+          $manifest.Save("$stageArm64/AppxManifest.xml")
+          
+          Write-Host "Packing ARM64 MSIX..."
+          & $makeappx pack /d $stageArm64 /p dist/Aura-Music-arm64.msix
+
+          # Sign the MSIX packages
+          Write-Host "Creating self-signed certificate for local validation..."
+          $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=AnilShebin" -KeyUsage DigitalSignature -FriendlyName "Aura Music Cert" -CertStoreLocation "Cert:\CurrentUser\My" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+          $pwd = ConvertTo-SecureString "Aura123!" -AsPlainText -Force
+          Export-PfxCertificate -Cert $cert -FilePath "dist/aura.pfx" -Password $pwd
+          
+          Write-Host "Signing x64 MSIX..."
+          & $signtool sign /fd SHA256 /a /f "dist/aura.pfx" /p "Aura123!" "dist/Aura-Music-x64.msix"
+          
+          Write-Host "Signing ARM64 MSIX..."
+          & $signtool sign /fd SHA256 /a /f "dist/aura.pfx" /p "Aura123!" "dist/Aura-Music-arm64.msix"
 
       # Custom packaging for macOS DMGs (AMD64 & ARM64)
       - name: Package macOS DMGs
@@ -223,7 +250,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            dist/*.exe
+            dist/*.msix
             dist/*.dmg
             dist/*.AppImage
             dist/*.deb

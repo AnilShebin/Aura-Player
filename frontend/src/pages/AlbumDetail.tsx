@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { Play, Pause, Shuffle, Plus, MoreHorizontal, ChevronLeft } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import { LosslessIcon } from '@/components/icons/LosslessIcon'
-import { DolbyIcon } from '@/components/icons/DolbyIcon'
+import { SpatialAudioIcon } from '@/components/icons/SpatialAudioIcon'
 import { SongContextMenu } from '@/components/songs/SongContextMenu'
 import { ToggleFavorite } from '@/services/libraryService'
 
@@ -149,8 +149,8 @@ export const AlbumDetail: React.FC = () => {
             <div className="flex items-center gap-1 font-normal text-zinc-300">
               {albumQuality.toLowerCase().includes('lossless') ? (
                 <LosslessIcon className="fill-zinc-300 shrink-0" width={16} height={10} />
-              ) : albumQuality.toLowerCase().includes('dolby') ? (
-                <DolbyIcon className="fill-zinc-300 shrink-0" width={22} height={8} />
+              ) : albumQuality.toLowerCase().includes('spatial') ? (
+                <SpatialAudioIcon className="text-zinc-300 shrink-0" width={18} height={12} />
               ) : (
                 <svg viewBox="0 0 24 24" width="12" height="12" className="fill-zinc-300 shrink-0">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />

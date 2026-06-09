@@ -17,7 +17,7 @@ export const UpdateDialog: React.FC = () => {
     if (!latestUpdateInfo.releaseNotes) {
       return [
         'TTML Karaoke Support',
-        'Spatial Audio / Dolby Atmos Detection',
+        'Spatial Audio Detection',
         'Library Stability & Speed Enhancements'
       ]
     }
@@ -32,7 +32,7 @@ export const UpdateDialog: React.FC = () => {
     if (parsed.length === 0) {
       return [
         'TTML Karaoke Support',
-        'Spatial Audio / Dolby Atmos Detection',
+        'Spatial Audio Detection',
         'Library Stability & Speed Enhancements'
       ]
     }

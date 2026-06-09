@@ -33,14 +33,10 @@ export const Settings: React.FC = () => {
   const [musicFolders, setMusicFolders] = useState<string[]>([])
 
   // General States
-  const [syncLibrary, setSyncLibrary] = useState(true)
-  const [downloadDolby, setDownloadDolby] = useState(false)
-  const [alwaysCheckDownloads, setAlwaysCheckDownloads] = useState(false)
   const [useListeningHistory, setUseListeningHistory] = useState(true)
   
   // Show section collapse state & checkboxes
   const [showSectionOpen, setShowSectionOpen] = useState(true)
-  const [showITunesStore, setShowITunesStore] = useState(false)
   const [showStarRatings, setShowStarRatings] = useState(true)
   const [showTickboxes, setShowTickboxes] = useState(false)
 
@@ -282,45 +278,12 @@ export const Settings: React.FC = () => {
 
         <div className="flex flex-col gap-3">
           
-          {/* Sync Library */}
-          <div className="flex items-center justify-between p-4 bg-[#202022]/40 border border-white/[0.04] rounded-xl">
-            <div className="flex flex-col pr-6">
-              <span className="text-[13.5px] font-semibold text-white">Sync library</span>
-              <span className="text-[11px] text-zinc-400 font-light mt-0.5 leading-snug">
-                Show all the music you've added, purchased and uploaded. The music on this computer will appear on your other devices after syncing with the cloud.
-              </span>
-            </div>
-            <ToggleSwitch checked={syncLibrary} onChange={() => setSyncLibrary(!syncLibrary)} />
-          </div>
-
-          {/* Dolby Atmos */}
-          <div className="flex items-center justify-between p-4 bg-[#202022]/40 border border-white/[0.04] rounded-xl">
-            <div className="flex flex-col pr-6">
-              <span className="text-[13.5px] font-semibold text-white">Download Dolby Atmos</span>
-              <span className="text-[11px] text-zinc-400 font-light mt-0.5 leading-snug">
-                Download immersive, three-dimensional (spatial) audio when available.
-              </span>
-            </div>
-            <ToggleSwitch checked={downloadDolby} onChange={() => setDownloadDolby(!downloadDolby)} />
-          </div>
-
-          {/* Always Check Downloads */}
-          <div className="flex items-center justify-between p-4 bg-[#202022]/40 border border-white/[0.04] rounded-xl">
-            <div className="flex flex-col pr-6">
-              <span className="text-[13.5px] font-semibold text-white">Always check for available downloads</span>
-              <span className="text-[11px] text-zinc-400 font-light mt-0.5 leading-snug">
-                Automatically check for items you previously purchased from the iTunes Store but didn't download.
-              </span>
-            </div>
-            <ToggleSwitch checked={alwaysCheckDownloads} onChange={() => setAlwaysCheckDownloads(!alwaysCheckDownloads)} />
-          </div>
-
           {/* Use Listening History */}
           <div className="flex items-center justify-between p-4 bg-[#202022]/40 border border-white/[0.04] rounded-xl">
             <div className="flex flex-col pr-6">
               <span className="text-[13.5px] font-semibold text-white">Use listening history</span>
               <span className="text-[11px] text-zinc-400 font-light mt-0.5 leading-snug">
-                Music played on this computer will appear in Recently Played, Replay mixes, influence your recommendations, and if you set up an Apple Music profile, it will also be seen by your followers.
+                Music played on this computer will appear in Recently Played and influence your smart recommendations.
               </span>
             </div>
             <ToggleSwitch checked={useListeningHistory} onChange={() => setUseListeningHistory(!useListeningHistory)} />
@@ -447,17 +410,6 @@ export const Settings: React.FC = () => {
             {showSectionOpen && (
               <div className="border-t border-white/[0.04] p-5 bg-black/10 flex flex-col gap-4">
                 
-                {/* iTunes Store Checkbox */}
-                <label className="flex items-center gap-3 cursor-pointer w-fit text-[13px] text-zinc-300 font-light">
-                  <input 
-                    type="checkbox"
-                    checked={showITunesStore}
-                    onChange={(e) => setShowITunesStore(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-[#fa586a] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#fa586a]"
-                  />
-                  <span>iTunes Store</span>
-                </label>
-
                 {/* Star ratings Checkbox */}
                 <label className="flex items-center gap-3 cursor-pointer w-fit text-[13px] text-zinc-300 font-light">
                   <input 

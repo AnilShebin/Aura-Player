@@ -818,7 +818,7 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 		if codec == "ALAC" {
 			quality = "Lossless"
 		} else if codec == "E-AC-3" || codec == "AC-3" || extSuffix == ".ec3" || extSuffix == ".ac3" {
-			quality = "Dolby Audio"
+			quality = "Spatial Audio"
 			if codec == "Unknown" {
 				if extSuffix == ".ac3" {
 					codec = "AC-3"
@@ -883,7 +883,7 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 		}
 	}
 
-	// Fallback to Dolby Audio if filename, folder, or tags indicate it
+	// Fallback to Spatial Audio if filename, folder, or tags indicate immersive audio
 	lowerPath := strings.ToLower(path)
 	lowerTitle := strings.ToLower(title)
 	lowerArtist := strings.ToLower(artist)
@@ -892,7 +892,7 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 		strings.Contains(lowerTitle, "dolby") || strings.Contains(lowerTitle, "atmos") ||
 		strings.Contains(lowerArtist, "dolby") || strings.Contains(lowerArtist, "atmos") ||
 		strings.Contains(lowerAlbum, "dolby") || strings.Contains(lowerAlbum, "atmos") {
-		quality = "Dolby Audio"
+		quality = "Spatial Audio"
 		if codec == "Unknown" || codec == "AAC" {
 			codec = "E-AC-3"
 		}
@@ -913,7 +913,7 @@ func (s *LibraryService) parseAudioFile(path string) (*Song, error) {
 				strValLower := strings.ToLower(strVal)
 				if strings.Contains(kLower, "dolby") || strings.Contains(kLower, "atmos") ||
 					strings.Contains(strValLower, "dolby") || strings.Contains(strValLower, "atmos") {
-					quality = "Dolby Audio"
+					quality = "Spatial Audio"
 					if codec == "Unknown" || codec == "AAC" {
 						codec = "E-AC-3"
 					}

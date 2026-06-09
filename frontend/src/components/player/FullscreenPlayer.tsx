@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { SyncedLyrics } from '@/components/lyrics/SyncedLyrics'
 import { LosslessIcon } from '@/components/icons/LosslessIcon'
-import { DolbyIcon } from '@/components/icons/DolbyIcon'
+import { SpatialAudioIcon } from '@/components/icons/SpatialAudioIcon'
 
 // Extracts a 9-color palette from artwork via canvas sampling
 function extractColorPalette(img: HTMLImageElement): string[] {
@@ -298,8 +298,8 @@ export const FullscreenPlayer: React.FC = () => {
               <div className="flex items-center justify-center gap-1.5 mb-5 opacity-55">
                 {qualityLabel.toLowerCase().includes('lossless') ? (
                   <LosslessIcon className="fill-white" width={18} height={11} />
-                ) : qualityLabel.toLowerCase().includes('dolby') ? (
-                  <DolbyIcon className="fill-white" width={24} height={9} />
+                ) : qualityLabel.toLowerCase().includes('spatial') ? (
+                  <SpatialAudioIcon className="text-white" width={20} height={14} />
                 ) : (
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-white">
                     <path d="M12 4v16M8 8v8M4 11v2M16 8v8M20 11v2" />

@@ -57,7 +57,7 @@ export const ListenNow: React.FC = () => {
     pool.push({
       id: 'heavy-rotation',
       title: 'Heavy Rotation',
-      subtitle: ' Music',
+      subtitle: 'Aura Music',
       tag: 'MADE FOR YOU',
       description: 'Your scanned library files and favorite recommendations',
       gradient: 'from-[#fa7c30] to-[#fa586a]',
@@ -78,7 +78,7 @@ export const ListenNow: React.FC = () => {
       pool.push({
         id: 'top-artist',
         title: topArtist,
-        subtitle: ' Music',
+        subtitle: 'Aura Music',
         tag: 'TOP ARTIST',
         description: `Featured songs by your most played artist, ${topArtist}`,
         gradient: 'from-[#a25cf7] to-[#fa586a]',
@@ -92,7 +92,7 @@ export const ListenNow: React.FC = () => {
       pool.push({
         id: 'recently-added',
         title: 'Recently Added',
-        subtitle: ' Music',
+        subtitle: 'Aura Music',
         tag: 'NEW RELEASES',
         description: 'Check out the latest tracks scanned in your library',
         gradient: 'from-[#0052d4] to-[#4364f7]',
@@ -125,7 +125,7 @@ export const ListenNow: React.FC = () => {
       pool.push({
         id: 'library-intelligence',
         title: 'Smart Mix',
-        subtitle: ' Music',
+        subtitle: 'Aura Music',
         tag: 'LIBRARY INTELLIGENCE',
         description: 'AI-curated selection from your local audio files',
         gradient: 'from-[#e52d80] to-[#b21c45]',
@@ -138,7 +138,7 @@ export const ListenNow: React.FC = () => {
       pool.push({
         id: 'by-lyricist',
         title: 'Wordcraft',
-        subtitle: ' Music',
+        subtitle: 'Aura Music',
         tag: 'BY LYRICIST',
         description: 'Focus on rich writing, poetry and lyric tracks',
         gradient: 'from-[#3a7bd5] to-[#3a6073]',
@@ -164,7 +164,7 @@ export const ListenNow: React.FC = () => {
       pool.push({
         id: 'by-decade',
         title: decadeName,
-        subtitle: ' Music',
+        subtitle: 'Aura Music',
         tag: 'BY DECADE',
         description: `Enjoy local tracks from the ${decadeName}`,
         gradient: 'from-[#ff9966] to-[#ff5e62]',
@@ -176,7 +176,7 @@ export const ListenNow: React.FC = () => {
     pool.push({
       id: 'aura-exclusive',
       title: 'Pure Audio',
-      subtitle: ' Music',
+      subtitle: 'Aura Music',
       tag: 'AURA EXCLUSIVE',
       description: 'Experience studio quality offline playback and clean response',
       gradient: 'from-[#e57a00] to-[#b83a00]',
@@ -189,7 +189,7 @@ export const ListenNow: React.FC = () => {
       pool.push({
         id: 'ttml-karaoke',
         title: 'Karaoke',
-        subtitle: ' Music',
+        subtitle: 'Aura Music',
         tag: 'TTML KARAOKE',
         description: 'Sing along with real-time synchronized local lyrics',
         gradient: 'from-[#4e54c8] to-[#8f94fb]',
@@ -206,7 +206,7 @@ export const ListenNow: React.FC = () => {
       pool.push({
         id: 'favorite-artists',
         title: selectedFavArtist,
-        subtitle: ' Music',
+        subtitle: 'Aura Music',
         tag: 'FAVORITE ARTIST',
         description: `Enjoy tracks by your favorite artist: ${selectedFavArtist}`,
         gradient: 'from-[#11998e] to-[#38ef7d]',
@@ -223,45 +223,38 @@ export const ListenNow: React.FC = () => {
         {
           id: 'heavy-rotation',
           title: 'Heavy Rotation',
-          subtitle: ' Music',
+          subtitle: 'Aura Music',
           tag: 'MADE FOR YOU',
           description: 'Your scanned library files and favorite recommendations',
           gradient: 'from-[#fa7c30] to-[#fa586a]',
           songs: []
         },
         {
-          id: 'valiant',
-          title: 'Valiant',
-          subtitle: 'ILAIYARAASA',
-          tag: 'NEW RELEASE',
-          description: "Ilaiyaraaja's Symphony Number 1 - Valiant",
-          gradient: 'from-[#121212] to-[#000000]',
-          songs: [],
-          backgroundImage: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&h=800&fit=crop'
+          id: 'get-started',
+          title: 'Get Started',
+          subtitle: 'Aura Music',
+          tag: 'WELCOME',
+          description: 'Add your music folders in Settings → Files to begin library scanning',
+          gradient: 'from-[#121212] to-[#2c2c2e]',
+          songs: []
         },
         {
-          id: 'featuring-anirudh',
-          title: 'Featuring Anirudh',
-          subtitle: ' Music',
-          tag: 'FEATURING ANIRUDH RAVICHANDER',
-          description: 'Anirudh Ravichander & Similar Artists',
+          id: 'pure-audio',
+          title: 'Pure Audio',
+          subtitle: 'Aura Music',
+          tag: 'LOSSLESS PLAYBACK',
+          description: 'Experience studio quality offline playback and clean response',
           gradient: 'from-[#e57a00] to-[#b83a00]',
-          songs: [],
-          avatars: [
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop',
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
-            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop'
-          ]
+          songs: []
         },
         {
-          id: 'anil-station',
-          title: "Anil Shebin's Station",
-          subtitle: ' Music',
-          tag: 'MADE FOR YOU',
-          description: "Anil Shebin's Station",
+          id: 'local-library',
+          title: 'Local Library',
+          subtitle: 'Aura Music',
+          tag: 'SUPPORTED FORMATS',
+          description: 'FLAC, ALAC, WAV, AIFF, AAC, MP3, OGG, and more',
           gradient: 'from-[#e52d80] to-[#b21c45]',
-          songs: [],
-          isStation: true
+          songs: []
         }
       ]
     }
@@ -321,7 +314,7 @@ export const ListenNow: React.FC = () => {
                     <rect x="26" y="16" width="2.4" height="12" rx="1.2" />
                   </svg>
                 )}
-                <span>{card.subtitle.replace('', '').trim()}</span>
+                <span>{card.subtitle.replace('', '').trim()}</span>
               </div>
 
               {card.avatars && (

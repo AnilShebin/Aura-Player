@@ -15,7 +15,7 @@ import { AnimatePresence } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { VolumeControl } from './VolumeControl'
 import { LosslessIcon } from '@/components/icons/LosslessIcon'
-import { DolbyIcon } from '@/components/icons/DolbyIcon'
+import { SpatialAudioIcon } from '@/components/icons/SpatialAudioIcon'
 import { SongContextMenu } from '@/components/songs/SongContextMenu'
 
 // Helper component for auto-scrolling text on hover if it overflows (infinite loop)
@@ -288,8 +288,8 @@ export const PlayerBar: React.FC = () => {
                 {playingSong.quality?.toLowerCase().includes('lossless') && (
                   <LosslessIcon className="fill-zinc-400 shrink-0 opacity-80" width={14} height={9} />
                 )}
-                {playingSong.quality?.toLowerCase().includes('dolby') && (
-                  <DolbyIcon className="fill-zinc-400 shrink-0 opacity-85" width={20} height={7} />
+                {playingSong.quality?.toLowerCase().includes('spatial') && (
+                  <SpatialAudioIcon className="text-zinc-400 shrink-0 opacity-85" width={16} height={11} />
                 )}
               </div>
               <div className="pb-2 min-w-0 flex items-center">
