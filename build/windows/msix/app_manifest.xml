@@ -8,13 +8,13 @@
   IgnorableNamespaces="uap3">
   
   <Identity 
-    Name="AnilShebin.AuraPlayer"
-    Publisher="CN=AnilShebin"
-    Version="1.0.4.0" 
+    Name="AnilShebinLabs.AuraMusicPlayer"
+    Publisher="CN=09B81860-F1BD-4EC7-A974-EFF28D07F2B4"
+    Version="1.0.5.0" 
     ProcessorArchitecture="x64" />
   
   <Properties>
-    <DisplayName>Aura Music</DisplayName>
+    <DisplayName>Aura Music Player</DisplayName>
     <PublisherDisplayName>Anil Shebin Labs</PublisherDisplayName>
     <Description>Aura Lossless Music Player</Description>
     <Logo>Assets\StoreLogo.png</Logo>
@@ -31,7 +31,7 @@
   <Applications>
     <Application Id="AuraMusic" Executable="Aura-Music.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Aura Music"
+        DisplayName="Aura Music Player"
         Description="Aura Lossless Music Player"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"

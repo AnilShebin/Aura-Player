@@ -19,8 +19,8 @@ Unicode true
 ####
 !define INFO_PROJECTNAME    "Aura-Music"
 !define INFO_COMPANYNAME    "Aura"
-!define INFO_PRODUCTNAME    "Aura Music"
-!define INFO_PRODUCTVERSION "1.0.4"
+!define INFO_PRODUCTNAME    "Aura Music Player"
+!define INFO_PRODUCTVERSION "1.0.5"
 !define INFO_COPYRIGHT      "© 2026 Aura"
 !define PRODUCT_EXECUTABLE  "Aura-Music.exe"
 !define UNINST_KEY_NAME     "AuraAuraMusic"
