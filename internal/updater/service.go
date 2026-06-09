@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-var CurrentVersion = "1.0.6"
+var CurrentVersion = "1.0.7"
 
 type UpdateInfo struct {
 	Available     bool   `json:"available"`

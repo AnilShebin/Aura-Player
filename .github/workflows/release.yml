@@ -172,6 +172,22 @@ jobs:
           Write-Host "Signing ARM64 MSIX..."
           & $signtool sign /fd SHA256 /a /f "dist/aura.pfx" /p "Aura123!" "dist/Aura-Music-arm64.msix"
 
+          # Build NSIS Setup Installers (EXE)
+          Write-Host "Generating WebView2 bootstrapper..."
+          wails3 generate webview2bootstrapper -dir build/windows/nsis
+          
+          Write-Host "Compiling x64 NSIS Installer..."
+          makensis -DARG_WAILS_AMD64_BINARY="$binDirAmd64\Aura-Music.exe" -DARG_WAILS_DLL_PATH="build/windows/libmpv-2.dll" build/windows/nsis/project.nsi
+          if (Test-Path "bin/Aura-Music-amd64-installer.exe") {
+            Copy-Item "bin/Aura-Music-amd64-installer.exe" -Destination "dist/Aura-Music-x64-Setup.exe" -Force
+          }
+          
+          Write-Host "Compiling ARM64 NSIS Installer..."
+          makensis -DARG_WAILS_ARM64_BINARY="$binDirArm64\Aura-Music.exe" build/windows/nsis/project.nsi
+          if (Test-Path "bin/Aura-Music-arm64-installer.exe") {
+            Copy-Item "bin/Aura-Music-arm64-installer.exe" -Destination "dist/Aura-Music-arm64-Setup.exe" -Force
+          }
+
       # Custom packaging for macOS DMGs (AMD64 & ARM64)
       - name: Package macOS DMGs
         if: matrix.goos == 'darwin'
@@ -248,6 +264,7 @@ jobs:
         with:
           files: |
             dist/*.msix
+            dist/*.exe
             dist/*.dmg
             dist/*.AppImage
             dist/*.deb
