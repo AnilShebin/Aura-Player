@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-var CurrentVersion = "1.0.0"
+var CurrentVersion = "1.0.2"
 const RepoOwner = "AnilShebin"
 const RepoName = "Aura-Player"
 

@@ -267,17 +267,8 @@ export const Settings: React.FC = () => {
         {/* Bottom About Section */}
         <div className="flex flex-col mt-6 px-1">
           <h3 className="text-[14px] font-bold text-white mb-2">About this app</h3>
-          <span className="text-zinc-400 text-[12px] font-light">Aura Music 1.6.4.90 (1.1540.23042.0)</span>
+          <span className="text-zinc-400 text-[12px] font-light">Aura Music {currentVersion}</span>
           <span className="text-zinc-400 text-[12px] font-light mt-1">Copyright © 2022–2026 Aura Inc. All rights reserved.</span>
-
-          {/* Links Stack */}
-          <div className="flex flex-col gap-2.5 mt-5 text-[12.5px] font-semibold text-[#fa586a]">
-            <span className="hover:underline cursor-pointer w-fit">Help</span>
-            <span className="hover:underline cursor-pointer w-fit">About Aura Music & Privacy</span>
-            <span className="hover:underline cursor-pointer w-fit">About iTunes Store & Privacy</span>
-            <span className="hover:underline cursor-pointer w-fit">Aura Service and Support</span>
-            <span className="hover:underline cursor-pointer w-fit">Acknowledgements</span>
-          </div>
         </div>
       </div>
     )
