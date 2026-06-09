@@ -183,6 +183,9 @@ jobs:
           & $signtool sign /fd SHA256 /a /f "dist/aura.pfx" /p "Aura123!" "dist/Aura-Music-arm64.msix"
 
           # Build NSIS Setup Installers (EXE)
+          Write-Host "Creating bin directory for installer..."
+          New-Item -ItemType Directory -Path bin -Force | Out-Null
+
           Write-Host "Generating WebView2 bootstrapper..."
           wails3 generate webview2bootstrapper -dir build/windows/nsis
 
@@ -195,7 +198,8 @@ jobs:
           Write-Host "Using makensis: $makensis"
 
           Write-Host "Compiling x64 NSIS Installer..."
-          & $makensis "-DARG_WAILS_AMD64_BINARY=$binDirAmd64\Aura-Music.exe" "-DARG_WAILS_DLL_PATH=build/windows/libmpv-2.dll" build/windows/nsis/project.nsi
+          $dllPath = Join-Path $pwd "build/windows/libmpv-2.dll"
+          & $makensis "-DARG_WAILS_AMD64_BINARY=$binDirAmd64\Aura-Music.exe" "-DARG_WAILS_DLL_PATH=$dllPath" build/windows/nsis/project.nsi
           if (Test-Path "bin/Aura-Music-amd64-installer.exe") {
             Copy-Item "bin/Aura-Music-amd64-installer.exe" -Destination "dist/Aura-Music-x64-Setup.exe" -Force
           } else {
