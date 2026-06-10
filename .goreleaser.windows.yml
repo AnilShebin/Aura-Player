@@ -23,6 +23,9 @@ builds:
 archives:
   - format: zip
     name_template: "Aura-{{ .Os }}-{{ .Arch }}"
+    files:
+      - src: "build/windows/libmpv-2.dll"
+        dst: "libmpv-2.dll"
 
 checksum:
   name_template: 'checksums.txt'

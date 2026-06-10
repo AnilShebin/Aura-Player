@@ -78,6 +78,16 @@ jobs:
           wails3 generate syso -arch amd64 -icon build/windows/icon.ico -manifest build/windows/wails.exe.manifest -info build/windows/info.json -out wails_windows_amd64.syso
           wails3 generate syso -arch arm64 -icon build/windows/icon.ico -manifest build/windows/wails.exe.manifest -info build/windows/info.json -out wails_windows_arm64.syso
 
+      # Extract libmpv-2.dll from version-controlled zip file so it can be packaged by GoReleaser
+      - name: Extract libmpv-2.dll
+        if: matrix.goos == 'windows'
+        shell: pwsh
+        run: |
+          if (Test-Path "build/windows/libmpv-2.dll.zip") {
+            Write-Host "Extracting libmpv-2.dll..."
+            Expand-Archive -Path "build/windows/libmpv-2.dll.zip" -DestinationPath "build/windows/" -Force
+          }
+
       # Run GoReleaser to compile and package binaries and debian packages locally (without publish)
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -120,12 +130,6 @@ jobs:
           $signtool = Join-Path $latestSdk.FullName "x64\signtool.exe"
           if (-not (Test-Path $makeappx)) {
             throw "makeappx.exe not found in Windows SDK path: $sdkPath"
-          }
-          
-          # Extract libmpv-2.dll from version-controlled zip file
-          if (Test-Path "build/windows/libmpv-2.dll.zip") {
-            Write-Host "Extracting libmpv-2.dll..."
-            Expand-Archive -Path "build/windows/libmpv-2.dll.zip" -DestinationPath "build/windows/" -Force
           }
 
           # Package x64 MSIX
@@ -173,8 +177,8 @@ jobs:
           # Sign the MSIX packages
           Write-Host "Creating self-signed certificate for local validation..."
           $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=09B81860-F1BD-4EC7-A974-EFF28D07F2B4" -KeyUsage DigitalSignature -FriendlyName "Aura Music Cert" -CertStoreLocation "Cert:\CurrentUser\My" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
-          $pwd = ConvertTo-SecureString "Aura123!" -AsPlainText -Force
-          Export-PfxCertificate -Cert $cert -FilePath "dist/aura.pfx" -Password $pwd
+          $certPassword = ConvertTo-SecureString "Aura123!" -AsPlainText -Force
+          Export-PfxCertificate -Cert $cert -FilePath "dist/aura.pfx" -Password $certPassword
           
           Write-Host "Signing x64 MSIX..."
           & $signtool sign /fd SHA256 /a /f "dist/aura.pfx" /p "Aura123!" "dist/Aura-Music-x64.msix"
@@ -198,7 +202,7 @@ jobs:
           Write-Host "Using makensis: $makensis"
 
           Write-Host "Compiling x64 NSIS Installer..."
-          $dllPath = Join-Path $pwd "build/windows/libmpv-2.dll"
+          $dllPath = Join-Path $PWD "build/windows/libmpv-2.dll"
           & $makensis "-DARG_WAILS_AMD64_BINARY=$binDirAmd64\Aura-Music.exe" "-DARG_WAILS_DLL_PATH=$dllPath" build/windows/nsis/project.nsi
           if (Test-Path "bin/Aura-Music-amd64-installer.exe") {
             Copy-Item "bin/Aura-Music-amd64-installer.exe" -Destination "dist/Aura-Music-x64-Setup.exe" -Force
@@ -208,7 +212,7 @@ jobs:
           }
 
           Write-Host "Compiling ARM64 NSIS Installer..."
-          & $makensis "-DARG_WAILS_ARM64_BINARY=$binDirArm64\Aura-Music.exe" build/windows/nsis/project.nsi
+          & $makensis "-DARG_WAILS_ARM64_BINARY=$binDirArm64\Aura-Music.exe" "-DARG_WAILS_DLL_PATH=$dllPath" build/windows/nsis/project.nsi
           if (Test-Path "bin/Aura-Music-arm64-installer.exe") {
             Copy-Item "bin/Aura-Music-arm64-installer.exe" -Destination "dist/Aura-Music-arm64-Setup.exe" -Force
           } else {
