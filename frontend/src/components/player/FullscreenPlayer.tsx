@@ -1,37 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Pause, Play, SkipBack, SkipForward, Volume2, Music2, Maximize2, Minimize2 } from 'lucide-react'
+import { X, Pause, Play, SkipBack, SkipForward, Music2, Maximize2, Minimize2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { SyncedLyrics } from '@/components/lyrics/SyncedLyrics'
 import { LosslessIcon } from '@/components/icons/LosslessIcon'
 import { SpatialAudioIcon } from '@/components/icons/SpatialAudioIcon'
+import { VolumeControl } from '@/components/player-bar/audio/VolumeControl'
 
-// Extracts a 9-color palette from artwork via canvas sampling
-function extractColorPalette(img: HTMLImageElement): string[] {
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = 50; canvas.height = 50
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return Array(9).fill('rgba(30,10,10,0.8)')
-    ctx.drawImage(img, 0, 0, 50, 50)
-    const d = ctx.getImageData(0, 0, 50, 50).data
-
-    // Sample 9 regions across the image
-    const regions = [
-      [0, 0], [25, 0], [49, 0],
-      [0, 25], [25, 25], [49, 25],
-      [0, 49], [25, 49], [49, 49]
-    ]
-    return regions.map(([rx, ry]) => {
-      const idx = (ry * 50 + rx) * 4
-      const r = d[idx], g = d[idx + 1], b = d[idx + 2]
-      return `rgb(${r},${g},${b})`
-    })
-  } catch {
-    return Array(9).fill('rgba(30,10,10,0.8)')
-  }
-}
 
 export const FullscreenPlayer: React.FC = () => {
   const showFullscreenPlayer = useMusicStore(s => s.showFullscreenPlayer)
@@ -44,8 +20,6 @@ export const FullscreenPlayer: React.FC = () => {
   const currentTime = useMusicStore(s => s.currentTime)
   const duration = useMusicStore(s => s.duration)
   const seekSong = useMusicStore(s => s.seekSong)
-  const volume = useMusicStore(s => s.volume)
-  const setVolume = useMusicStore(s => s.setVolume)
   const lyrics = useMusicStore(s => s.lyrics)
   const showOriginal = useMusicStore(s => s.showOriginal)
   const showTranslation = useMusicStore(s => s.showTranslation)
@@ -53,7 +27,6 @@ export const FullscreenPlayer: React.FC = () => {
 
   const [showLyrics, setShowLyrics] = useState(true)
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
-  const [palette, setPalette] = useState<string[]>(Array(9).fill('rgb(30,10,20)'))
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement)
 
   useEffect(() => {
@@ -107,34 +80,7 @@ export const FullscreenPlayer: React.FC = () => {
 
   const artworkUrl = playingSong?.coverUrl || playingSong?.artwork || ''
 
-  // Extract color palette from artwork whenever track changes
-  useEffect(() => {
-    if (!artworkUrl) {
-      setPalette(Array(9).fill('rgb(30,10,20)'))
-      return
-    }
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => setPalette(extractColorPalette(img))
-    img.onerror = () => setPalette(Array(9).fill('rgb(30,10,20)'))
-    img.src = artworkUrl
-  }, [artworkUrl])
 
-  const meshGradient = useMemo(() => ({
-    backgroundColor: palette[4],
-    backgroundImage: `
-      radial-gradient(at 0% 0%,   ${palette[0]} 0px, transparent 55%),
-      radial-gradient(at 50% 0%,  ${palette[1]} 0px, transparent 55%),
-      radial-gradient(at 100% 0%, ${palette[2]} 0px, transparent 55%),
-      radial-gradient(at 0% 50%,  ${palette[3]} 0px, transparent 55%),
-      radial-gradient(at 100% 50%,${palette[5]} 0px, transparent 55%),
-      radial-gradient(at 0% 100%, ${palette[6]} 0px, transparent 55%),
-      radial-gradient(at 50% 100%,${palette[7]} 0px, transparent 55%),
-      radial-gradient(at 100% 100%,${palette[8]} 0px, transparent 55%),
-      radial-gradient(at 50% 50%, ${palette[4]} 0px, transparent 55%)
-    `,
-    filter: 'saturate(2.2) contrast(1.1) brightness(0.85)'
-  }), [palette])
 
   const activeTrack = useMemo(() => ({
     title: playingSong?.title || '',
@@ -187,27 +133,35 @@ export const FullscreenPlayer: React.FC = () => {
         }
       `}</style>
 
-      {/* Background: blurred artwork + mesh gradient + grain overlay */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-150 blur-[120px] opacity-40 transform-gpu"
-          style={{ backgroundImage: `url(${artworkUrl})` }}
-        />
-        <div
-          className="absolute inset-0 transition-all duration-1000 ease-in-out scale-110"
-          style={meshGradient}
-        />
-        <div className="absolute inset-0 backdrop-blur-[140px] opacity-90 transform-gpu" />
+      {/* Background: unified blurred artwork/gradient + grain overlay */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {!artworkUrl ? (
+          /* Gorgeous premium mesh gradient when cover art is missing or fails to load */
+          <div 
+            className="absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-80 animate-ambient-slow"
+            style={{
+              background: `
+                radial-gradient(circle at 20% 30%, rgba(250, 88, 106, 0.35) 0%, transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(219, 39, 119, 0.25) 0%, transparent 60%)
+              `,
+              filter: 'blur(80px)'
+            }}
+          />
+        ) : (
+          /* Blurred Cover Artwork */
+          <div 
+            className="absolute inset-0 bg-cover bg-center scale-150 blur-[110px] opacity-[0.52] transition-opacity duration-1000 ease-in-out"
+            style={{ backgroundImage: `url(${artworkUrl})` }}
+          />
+        )}
+        {/* Translucent overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/65 to-background/95" />
         {/* Grain noise */}
-        <div className="absolute inset-0 opacity-[0.2] pointer-events-none mix-blend-overlay">
-          <svg className="w-full h-full">
-            <filter id="fsNoiseFilter">
-              <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch" />
-              <feColorMatrix type="saturate" values="0" />
-            </filter>
-            <rect width="100%" height="100%" filter="url(#fsNoiseFilter)" />
-          </svg>
-        </div>
+        <div 
+          className="absolute inset-0 opacity-[0.25] pointer-events-none mix-blend-overlay bg-repeat"
+          style={{ backgroundImage: 'url(/noise.png)' }}
+        />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_10%,rgba(0,0,0,0.5)_100%)]" />
       </div>
 
@@ -269,7 +223,7 @@ export const FullscreenPlayer: React.FC = () => {
             <div className="w-full relative mb-6 group" style={{ maxHeight: 'min(100%, 42vh)', aspectRatio: '1/1' }}>
               <div
                 className="absolute inset-0 blur-[80px] opacity-40 rounded-full scale-125 transition-colors duration-1000"
-                style={{ backgroundColor: palette[4] }}
+                style={{ backgroundColor: 'rgba(250, 88, 106, 0.2)' }}
               />
               <motion.div
                 animate={{ scale: isPlaying ? 1 : 0.94 }}
@@ -329,46 +283,10 @@ export const FullscreenPlayer: React.FC = () => {
 
               {/* Volume */}
               <div className="relative flex items-center">
-                <button
-                  onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-                  className={`transition-all duration-300 cursor-pointer ${showVolumeSlider ? 'text-white' : 'text-white/40 hover:text-white'}`}
-                >
-                  <Volume2 className="w-5 h-5" />
-                </button>
-
-                <motion.div
-                  initial={false}
-                  animate={{
-                    opacity: showVolumeSlider ? 1 : 0,
-                    scale: showVolumeSlider ? 1 : 0.9,
-                    y: showVolumeSlider ? -70 : -50,
-                    pointerEvents: showVolumeSlider ? 'auto' : 'none'
-                  }}
-                  className="absolute left-[-10px] bg-[#1c1c1e] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-white/5 min-w-[280px] z-50"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40">
-                    <path d="M11 5L6 9H2v6h4l5 4V5z" />
-                  </svg>
-                  <div className="flex-1 relative h-1.5 flex items-center cursor-pointer">
-                    <input
-                      type="range" min="0" max="1" step="0.01" value={volume}
-                      onChange={(e) => setVolume(parseFloat(e.target.value))}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                    <div className="w-full h-full bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#FF2D55]" style={{ width: `${volume * 100}%` }} />
-                    </div>
-                    <div
-                      className="absolute w-4 h-4 bg-[#FF2D55] rounded-full border-[3px] border-[#2c2c2e] shadow-lg pointer-events-none"
-                      style={{ left: `calc(${volume * 100}% - 8px)` }}
-                    />
-                  </div>
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40">
-                    <path d="M11 5L6 9H2v6h4l5 4V5z" />
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                  </svg>
-                </motion.div>
+                <VolumeControl
+                  showVolumeSlider={showVolumeSlider}
+                  setShowVolumeSlider={setShowVolumeSlider}
+                />
               </div>
 
               {/* Skip / Play / Skip */}

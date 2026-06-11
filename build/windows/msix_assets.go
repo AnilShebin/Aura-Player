@@ -56,6 +56,87 @@ func savePNG(img image.Image, path string) error {
 	return png.Encode(f, img)
 }
 
+func generateStandardLogos(srcImg image.Image, outDir string) error {
+	targets := []struct {
+		name   string
+		width  int
+		height int
+	}{
+		{"StoreLogo.png", 48, 48},
+		{"Square150x150Logo.png", 150, 150},
+		{"Square44x44Logo.png", 44, 44},
+	}
+
+	for _, t := range targets {
+		resized := resizeNearest(srcImg, t.width, t.height)
+		path := filepath.Join(outDir, t.name)
+		if err := savePNG(resized, path); err != nil {
+			return fmt.Errorf("saving %s: %w", t.name, err)
+		}
+		fmt.Printf("Generated: %s (%dx%d)\n", path, t.width, t.height)
+	}
+	return nil
+}
+
+func generateTargetSizeLogos(srcImg image.Image, outDir string) error {
+	sizes := []int{16, 24, 32, 44, 48, 72, 96, 256}
+	for _, size := range sizes {
+		resized := resizeNearest(srcImg, size, size)
+
+		// 1. Standard target size
+		name := fmt.Sprintf("Square44x44Logo.targetsize-%d.png", size)
+		path := filepath.Join(outDir, name)
+		if err := savePNG(resized, path); err != nil {
+			return fmt.Errorf("saving %s: %w", name, err)
+		}
+		fmt.Printf("Generated: %s (%dx%d)\n", path, size, size)
+
+		// 2. Altform unplated (transparent for dark/default theme)
+		nameUnplated := fmt.Sprintf("Square44x44Logo.targetsize-%d_altform-unplated.png", size)
+		pathUnplated := filepath.Join(outDir, nameUnplated)
+		if err := savePNG(resized, pathUnplated); err != nil {
+			return fmt.Errorf("saving %s: %w", nameUnplated, err)
+		}
+		fmt.Printf("Generated: %s (%dx%d)\n", pathUnplated, size, size)
+
+		// 3. Altform light unplated (transparent for light theme)
+		nameLightUnplated := fmt.Sprintf("Square44x44Logo.targetsize-%d_altform-lightunplated.png", size)
+		pathLightUnplated := filepath.Join(outDir, nameLightUnplated)
+		if err := savePNG(resized, pathLightUnplated); err != nil {
+			return fmt.Errorf("saving %s: %w", nameLightUnplated, err)
+		}
+		fmt.Printf("Generated: %s (%dx%d)\n", pathLightUnplated, size, size)
+	}
+	return nil
+}
+
+func generatePaddedLogos(srcImg image.Image, outDir string) error {
+	// Generate Wide310x150Logo.png (padded)
+	wideLogo := makePadded(srcImg, 310, 150, 120)
+	widePath := filepath.Join(outDir, "Wide310x150Logo.png")
+	if err := savePNG(wideLogo, widePath); err != nil {
+		return fmt.Errorf("saving Wide310x150Logo.png: %w", err)
+	}
+	fmt.Printf("Generated: %s (310x150)\n", widePath)
+
+	// Generate SplashScreen.png (padded)
+	splashScreen := makePadded(srcImg, 620, 300, 200)
+	splashPath := filepath.Join(outDir, "SplashScreen.png")
+	if err := savePNG(splashScreen, splashPath); err != nil {
+		return fmt.Errorf("saving SplashScreen.png: %w", err)
+	}
+	fmt.Printf("Generated: %s (620x300)\n", splashPath)
+
+	// Also generate AppIcon.png for the properties/logo fields (256x256)
+	appIcon := resizeNearest(srcImg, 256, 256)
+	appIconPath := filepath.Join(outDir, "AppIcon.png")
+	if err := savePNG(appIcon, appIconPath); err != nil {
+		return fmt.Errorf("saving AppIcon.png: %w", err)
+	}
+	fmt.Printf("Generated: %s (256x256)\n", appIconPath)
+	return nil
+}
+
 func main() {
 	iconPath := filepath.Join("build", "appicon.png")
 	outDir := filepath.Join("build", "windows", "msix", "Assets")
@@ -73,50 +154,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	targets := []struct {
-		name   string
-		width  int
-		height int
-	}{
-		{"StoreLogo.png", 48, 48},
-		{"Square150x150Logo.png", 150, 150},
-		{"Square44x44Logo.png", 44, 44},
-	}
-
-	for _, t := range targets {
-		resized := resizeNearest(srcImg, t.width, t.height)
-		path := filepath.Join(outDir, t.name)
-		if err := savePNG(resized, path); err != nil {
-			fmt.Printf("Error saving %s: %v\n", t.name, err)
-			os.Exit(1)
-		}
-		fmt.Printf("Generated: %s (%dx%d)\n", path, t.width, t.height)
-	}
-
-	// Generate Wide310x150Logo.png (padded)
-	wideLogo := makePadded(srcImg, 310, 150, 120)
-	widePath := filepath.Join(outDir, "Wide310x150Logo.png")
-	if err := savePNG(wideLogo, widePath); err != nil {
-		fmt.Printf("Error saving Wide310x150Logo.png: %v\n", err)
+	if err := generateStandardLogos(srcImg, outDir); err != nil {
+		fmt.Printf("Error generating standard logos: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Generated: %s (310x150)\n", widePath)
 
-	// Generate SplashScreen.png (padded)
-	splashScreen := makePadded(srcImg, 620, 300, 200)
-	splashPath := filepath.Join(outDir, "SplashScreen.png")
-	if err := savePNG(splashScreen, splashPath); err != nil {
-		fmt.Printf("Error saving SplashScreen.png: %v\n", err)
+	if err := generateTargetSizeLogos(srcImg, outDir); err != nil {
+		fmt.Printf("Error generating target size logos: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Generated: %s (620x300)\n", splashPath)
 
-	// Also generate AppIcon.png for the properties/logo fields (256x256)
-	appIcon := resizeNearest(srcImg, 256, 256)
-	appIconPath := filepath.Join(outDir, "AppIcon.png")
-	if err := savePNG(appIcon, appIconPath); err != nil {
-		fmt.Printf("Error saving AppIcon.png: %v\n", err)
+	if err := generatePaddedLogos(srcImg, outDir); err != nil {
+		fmt.Printf("Error generating padded logos: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Generated: %s (256x256)\n", appIconPath)
 }

@@ -103,7 +103,7 @@ export const PlaylistDetail: React.FC = () => {
       <div className="flex flex-col md:flex-row gap-8 items-start md:items-end mb-8">
         
         {/* Playlist Cover */}
-        <div className="w-48 h-48 md:w-56 md:h-56 rounded-xl overflow-hidden bg-zinc-950 shrink-0 shadow-2xl relative border border-white/5">
+        <div className="relative w-[200px] h-[200px] md:w-[270px] md:h-[270px] rounded-lg overflow-hidden bg-zinc-950 shrink-0 shadow-2xl border border-white/5">
           <PlaylistCover
             name={selectedPlaylist.name}
             coverUrl={selectedPlaylist.coverUrl}

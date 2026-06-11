@@ -36,9 +36,8 @@ export const AlbumArtwork: React.FC<AlbumArtworkProps> = React.memo(({
       src={src}
       alt={title}
       className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${className}`}
-      loading="lazy"
-      decoding="async"
-      fetchPriority={size === 'original' ? 'high' : 'low'}
+      loading="eager"
+      fetchPriority="high"
       onError={() => setHasError(true)}
     />
   )

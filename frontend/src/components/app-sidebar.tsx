@@ -1,5 +1,5 @@
 import React from 'react'
-import { Home, Heart, Disc, Music, Folder, Settings, Search, ChevronDown, ChevronUp } from 'lucide-react'
+import { Home, Heart, Disc, Music, Settings, Search, ChevronDown, ChevronUp } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import {
   Sidebar,
@@ -181,19 +181,7 @@ export function AppSidebar({ isMaximized, ...props }: AppSidebarProps) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => setCurrentTab('folders')}
-                  isActive={currentTab === 'folders'}
-                  tooltip="Folders"
-                  className={getLinkClass(currentTab === 'folders')}
-                >
-                  <span className={getIconWrapperClass(currentTab === 'folders')}>
-                    <Folder strokeWidth={1.8} className={getIconClass(currentTab === 'folders')} />
-                  </span>
-                  {!sidebarCollapsed && <span>Folders</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

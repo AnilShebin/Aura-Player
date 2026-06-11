@@ -192,15 +192,10 @@ export const PlayerBar: React.FC = () => {
       className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[700px] h-[64px] bg-[#1c1c1e]/60 backdrop-blur-[40px] border border-white/10 rounded-full flex items-center px-6 z-30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden transition-[opacity,transform] duration-300 wails-no-drag"
     >
       {/* Grain Overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-overlay z-0">
-        <svg className="w-full h-full">
-          <filter id="noiseFilterHeader">
-            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#noiseFilterHeader)" />
-        </svg>
-      </div>
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.25] mix-blend-overlay z-0 bg-repeat"
+        style={{ backgroundImage: 'url(/noise.png)' }}
+      />
 
       {/* Playback Controls (Left Column) */}
       <div className="flex items-center gap-5 mr-4 relative z-10 shrink-0">

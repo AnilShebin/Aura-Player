@@ -61,8 +61,8 @@ export const Favorites: React.FC = () => {
       <div className="flex flex-col md:flex-row items-center md:items-end gap-8 border-b border-white/5 pb-8">
         
         {/* Large White Rounded Cover with Red Star */}
-        <div className="relative w-[190px] h-[190px] md:w-[220px] md:h-[220px] rounded-3xl bg-white flex items-center justify-center shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] shrink-0 border border-zinc-200">
-          <svg viewBox="0 0 24 24" className="w-[100px] h-[100px] fill-[#fa586a]" style={{ filter: 'drop-shadow(0 4px 6px rgba(250, 88, 106, 0.15))' }}>
+        <div className="relative w-[200px] h-[200px] md:w-[270px] md:h-[270px] rounded-lg bg-white flex items-center justify-center shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] shrink-0 border border-zinc-200">
+          <svg viewBox="0 0 24 24" className="w-[120px] h-[120px] fill-[#fa586a]" style={{ filter: 'drop-shadow(0 4px 6px rgba(250, 88, 106, 0.15))' }}>
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         </div>
@@ -145,7 +145,7 @@ export const Favorites: React.FC = () => {
 
                 {/* Cover Artwork */}
                 <div className="w-[40px] h-[40px] rounded-lg overflow-hidden border border-white/5 bg-zinc-900 shrink-0">
-                  <img src={song.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  <img src={song.coverUrl} alt="" className="w-full h-full object-cover" />
                 </div>
 
                 {/* Song Title */}

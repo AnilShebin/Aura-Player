@@ -144,7 +144,7 @@ export const Songs: React.FC = () => {
             </div>
 
             {/* Options */}
-            <div className="w-[5%] shrink-0 flex items-center justify-start text-zinc-600/50 pl-1">
+            <div className="w-[5%] shrink-0 flex items-center justify-start text-zinc-400 pl-1">
               <MoreHorizontal size={14} />
             </div>
           </div>

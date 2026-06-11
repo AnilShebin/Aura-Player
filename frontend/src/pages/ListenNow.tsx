@@ -1,7 +1,69 @@
-import React, { useMemo, useCallback, useState } from 'react'
+import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { Play, ChevronRight, MoreHorizontal, Disc } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import { SongContextMenu } from '@/components/songs/SongContextMenu'
+
+const CardMarquee: React.FC<{ text: string; isParentHovered: boolean }> = React.memo(({ text, isParentHovered }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLSpanElement>(null)
+  const [shouldScroll, setShouldScroll] = useState(false)
+  const [textWidth, setTextWidth] = useState(0)
+
+  useEffect(() => {
+    if (containerRef.current && textRef.current) {
+      const containerWidth = containerRef.current.clientWidth
+      const currentTextWidth = textRef.current.scrollWidth
+      if (currentTextWidth > containerWidth) {
+        setShouldScroll(true)
+        setTextWidth(currentTextWidth)
+      } else {
+        setShouldScroll(false)
+        setTextWidth(0)
+      }
+    }
+  }, [text])
+
+  const blockWidth = textWidth + 32
+  const animationDuration = Math.max(4, blockWidth / 30)
+
+  return (
+    <div
+      ref={containerRef}
+      className="overflow-hidden whitespace-nowrap w-full relative flex items-center mt-0.5"
+    >
+      <div
+        className="flex items-center"
+        style={{
+          width: 'max-content',
+          animation: isParentHovered && shouldScroll ? `marquee-scroll ${animationDuration}s linear infinite` : 'none',
+          animationDelay: '0.3s'
+        }}
+      >
+        <span ref={textRef} className="text-[11px] text-white/60 font-light leading-none select-none">
+          {text}
+        </span>
+
+        {shouldScroll && (
+          <>
+            <span className="inline-block w-8 shrink-0" />
+            <span className="text-[11px] text-white/60 font-light leading-none select-none">
+              {text}
+            </span>
+          </>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes marquee-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  )
+})
+CardMarquee.displayName = 'CardMarquee'
+
 
 export const ListenNow: React.FC = () => {
   const playSongDirect = useMusicStore(state => state.playSongDirect)
@@ -10,6 +72,7 @@ export const ListenNow: React.FC = () => {
 
   const [songMenuCoords, setSongMenuCoords] = useState<{ top: number; left: number } | null>(null)
   const [activeSong, setActiveSong] = useState<any>(null)
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null)
 
   const handleSongOptionsClick = useCallback((e: React.MouseEvent<HTMLButtonElement>, song: any) => {
     e.stopPropagation()
@@ -285,81 +348,132 @@ export const ListenNow: React.FC = () => {
         <h2 className="text-[20px] font-bold text-white tracking-tight">Top Picks for You</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {topPicks.map((card) => (
-            <div
-              key={card.id}
-              onClick={() => handlePlayTopPick(card)}
-              className={`group relative rounded-[6px] overflow-hidden aspect-[3/4] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 transform-gpu bg-gradient-to-b ${card.gradient}`}
-              style={{ contain: 'layout style paint' }}
-            >
-              {card.backgroundImage && (
-                <>
-                  <div
-                    className="absolute inset-0 bg-cover bg-center opacity-45"
-                    style={{ backgroundImage: `url('${card.backgroundImage}')` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/10" />
-                </>
-              )}
+          {topPicks.map((card) => {
+            // Dynamically assign designType based on card ID to match Apple Music vector styles
+            let designType = 'station-spiral';
+            if (card.id === 'heavy-rotation' || card.id === 'by-lyricist' || card.id === 'local-library') {
+              designType = 'station-circles';
+            } else if (card.id === 'top-artist' || card.id === 'continue-listening') {
+              designType = 'station-zen';
+            } else if (card.id === 'recently-added' || card.id === 'by-decade') {
+              designType = 'station-spiral';
+            } else if (card.id === 'library-intelligence' || card.id === 'get-started') {
+              designType = 'station-anil';
+            } else if (card.id === 'favorite-artists') {
+              designType = 'station-heart';
+            } else if (card.id === 'ttml-karaoke' || card.id === 'aura-exclusive' || card.id === 'pure-audio') {
+              designType = 'station-energy';
+            }
 
-              <div className="z-10 flex items-center justify-end gap-1 text-white/95 text-xs font-semibold select-none">
-                {card.subtitle.includes('Music') && (
-                  <svg viewBox="0 0 32 32" className="w-3.5 h-3.5 text-white shrink-0 fill-current mr-0.5" aria-hidden="true">
-                    <rect x="2" y="16" width="2.4" height="12" rx="1.2" />
-                    <rect x="6" y="9.5" width="2.4" height="18.5" rx="1.2" />
-                    <rect x="10" y="4.5" width="2.4" height="16" rx="1.2" />
-                    <rect x="14" y="0" width="2.4" height="14" rx="1.2" />
-                    <rect x="18" y="4.5" width="2.4" height="16" rx="1.2" />
-                    <rect x="22" y="9.5" width="2.4" height="18.5" rx="1.2" />
-                    <rect x="26" y="16" width="2.4" height="12" rx="1.2" />
+            return (
+              <div
+                key={card.id}
+                onClick={() => handlePlayTopPick(card)}
+                onMouseEnter={() => setHoveredCardId(card.id)}
+                onMouseLeave={() => setHoveredCardId(null)}
+                className={`group relative rounded-[6px] overflow-hidden aspect-[3/4] p-6 flex flex-col justify-between cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 transform-gpu bg-gradient-to-b ${card.gradient}`}
+                style={{ contain: 'layout style paint' }}
+              >
+                {/* Custom SVG Design overlays in the center background */}
+                {designType === 'station-anil' && (
+                  <svg viewBox="0 0 200 250" className="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M-50,-20 L20,-20 L105,125 L20,270 L-50,270 L35,125 Z" fill="#d33c52" opacity="0.9" />
+                    <path d="M-10,-20 L50,-20 L135,125 L50,270 L-10,270 L65,125 Z" fill="#e66c43" opacity="0.9" />
+                    <path d="M30,-20 L90,-20 L175,125 L90,270 L30,270 L105,125 Z" fill="#f49c38" opacity="0.9" />
+                    <path d="M70,-20 L220,-20 L220,270 L70,270 L145,125 Z" fill="#fbc531" opacity="0.9" />
                   </svg>
                 )}
-                <span>{card.subtitle.replace('', '').trim()}</span>
-              </div>
 
-              {card.avatars && (
-                <div className="my-auto relative w-36 h-28 mx-auto z-10 flex items-center justify-center">
-                  <div className="absolute left-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
-                    <img src={card.avatars[0]} className="object-cover w-full h-full" loading="lazy" />
-                  </div>
-                  <div className="absolute right-2 w-14 h-14 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
-                    <img src={card.avatars[1]} className="object-cover w-full h-full" loading="lazy" />
-                  </div>
-                  <div className="absolute top-0 w-16 h-16 rounded-full overflow-hidden border-2 border-orange-400 shadow-lg">
-                    <img src={card.avatars[2]} className="object-cover w-full h-full" loading="lazy" />
-                  </div>
-                </div>
-              )}
-
-              {card.isStation && (
-                <div className="my-auto flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-24 h-24 text-white drop-shadow-xl opacity-90">
-                    <polygon points="25,15 75,50 25,85" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                    <polygon points="50,30 75,50 50,70" fill="currentColor" />
+                {designType === 'station-spiral' && (
+                  <svg viewBox="0 0 200 250" className="absolute inset-0 w-full h-full flex items-center justify-center p-6 pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 100, 205
+                             C  80, 205   80, 198  100, 198
+                             C 125, 198  125, 189  100, 189
+                             C  65, 189   65, 177  100, 177
+                             C 140, 177  140, 161  100, 161
+                             C  50, 161   50, 141  100, 141
+                             C 155, 141  155, 115  100, 115
+                             C  30, 115   30,  85  100,  85
+                             C 175,  85  175,  50  100,  50
+                             C  15,  50   15,  20   45,  20"
+                          fill="none" stroke="#2fb8fc" strokeWidth="4.5" strokeLinecap="round" opacity="0.85" />
                   </svg>
-                </div>
-              )}
+                )}
 
-              {!card.avatars && !card.isStation && !card.backgroundImage && (
-                <div className="my-auto flex flex-col items-center justify-center text-center z-10">
-                  <h3 className="text-[32px] font-black text-white leading-none tracking-tight break-words max-w-full">
+                {designType === 'station-circles' && (
+                  <svg viewBox="0 0 200 250" className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="115" r="22" stroke="#fbc531" strokeWidth="4.5" fill="none" opacity="0.9" />
+                    <circle cx="100" cy="115" r="50" stroke="#fbc531" strokeWidth="4.5" fill="none" opacity="0.8" />
+                    <circle cx="100" cy="115" r="78" stroke="#fbc531" strokeWidth="4.5" fill="none" opacity="0.7" />
+                  </svg>
+                )}
+
+                {designType === 'station-zen' && (
+                  <svg viewBox="0 0 200 250" className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="100" cy="70" rx="26" ry="14" stroke="#ffffff" strokeWidth="4.5" fill="none" opacity="0.8" />
+                    <ellipse cx="100" cy="115" rx="46" ry="20" stroke="#ffffff" strokeWidth="4.5" fill="none" opacity="0.8" />
+                    <ellipse cx="100" cy="170" rx="60" ry="28" stroke="#ffffff" strokeWidth="4.5" fill="none" opacity="0.8" />
+                  </svg>
+                )}
+
+                {designType === 'station-heart' && (
+                  <svg viewBox="0 0 200 250" className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 100 175 
+                             C  80 150,  35 120,  35 85 
+                             C  35 60,   55 40,   75 40 
+                             C  88 40,   96 48,  100 55 
+                             C 104 48,  112 40,  125 40 
+                             C 145 40,  165 60,  165 85 
+                             C 165 120, 120 150, 100 175 Z"
+                          stroke="#ffb3d9" strokeWidth="4.5" strokeLinejoin="round" fill="none" opacity="0.85" />
+                  </svg>
+                )}
+
+                {designType === 'station-energy' && (
+                  <svg viewBox="0 0 200 250" className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="120,40 60,130 95,130 70,210 145,115 105,115"
+                             stroke="#c7f9cc" strokeWidth="4.5" strokeLinejoin="round" fill="none" opacity="0.85" />
+                  </svg>
+                )}
+
+                {/* Aura logo & subtitle in top right */}
+                <div className="relative z-10 flex items-center justify-end gap-1 text-white/90 text-[11px] font-light select-none tracking-tight">
+                  {card.subtitle && card.subtitle.includes('Music') && (
+                    <svg viewBox="0 0 32 32" className="w-3.5 h-3.5 text-white shrink-0 fill-current mr-0.5 animate-pulse" aria-hidden="true">
+                      <rect x="2" y="16" width="2.4" height="12" rx="1.2" />
+                      <rect x="6" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                      <rect x="10" y="4.5" width="2.4" height="16" rx="1.2" />
+                      <rect x="14" y="0" width="2.4" height="14" rx="1.2" />
+                      <rect x="18" y="4.5" width="2.4" height="16" rx="1.2" />
+                      <rect x="22" y="9.5" width="2.4" height="18.5" rx="1.2" />
+                      <rect x="26" y="16" width="2.4" height="12" rx="1.2" />
+                    </svg>
+                  )}
+                  <span>{card.subtitle}</span>
+                </div>
+
+                {/* Bottom Metadata Text */}
+                <div className="relative z-10 flex flex-col gap-0.5 select-none w-full pr-2">
+                  <span className="text-[9px] font-medium uppercase tracking-wider text-white/70">{card.tag}</span>
+                  <h3 className="text-[15px] font-medium text-white/95 leading-tight tracking-tight">
                     {card.title}
                   </h3>
+                  <CardMarquee text={card.description} isParentHovered={hoveredCardId === card.id} />
                 </div>
-              )}
 
-              <div className="z-10 flex flex-col gap-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">{card.tag}</span>
-                <p className="text-xs text-white font-medium line-clamp-2 leading-tight">
-                  {card.description}
-                </p>
+                {/* Play Button (black circle with white play arrow, shows on hover, positioned on the middle-right exactly like the screenshot) */}
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlayTopPick(card);
+                  }}
+                  className="absolute right-5 bottom-[44px] w-9 h-9 rounded-full bg-black/80 hover:bg-black text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 active:scale-95 z-20 cursor-pointer"
+                >
+                  <Play size={14} fill="currentColor" className="ml-0.5 text-white" />
+                </div>
               </div>
-
-              <div className="absolute right-4 bottom-4 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 active:scale-95 z-20">
-                <Play size={20} fill="currentColor" className="ml-0.5" />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -388,7 +502,6 @@ export const ListenNow: React.FC = () => {
                       src={song.coverUrl}
                       alt={song.title}
                       className="w-full h-full object-cover"
-                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">

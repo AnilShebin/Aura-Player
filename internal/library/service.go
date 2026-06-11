@@ -1095,7 +1095,8 @@ func parseM4AInfo(filePath string) (codec string, sampleRate int, channels int, 
 				break
 			}
 
-			if boxType == "mvhd" {
+			switch boxType {
+			case "mvhd":
 				payloadSize := size - headerSize
 				payload := make([]byte, payloadSize)
 				if _, err := io.ReadFull(f, payload); err == nil && len(payload) >= 20 {
@@ -1111,9 +1112,9 @@ func parseM4AInfo(filePath string) (codec string, sampleRate int, channels int, 
 						durationSeconds = int(durationTicks / uint64(timeScale))
 					}
 				}
-			} else if boxType == "mdat" {
+			case "mdat":
 				mdatSize = size - headerSize
-			} else if boxType == "alac" {
+			case "alac":
 				if size == 36 {
 					payloadSize := size - headerSize
 					payload := make([]byte, payloadSize)
@@ -1126,7 +1127,7 @@ func parseM4AInfo(filePath string) (codec string, sampleRate int, channels int, 
 						}
 					}
 				}
-			} else if boxType == "mp4a" {
+			case "mp4a":
 				payloadSize := size - headerSize
 				payload := make([]byte, payloadSize)
 				if _, err := io.ReadFull(f, payload); err == nil && len(payload) >= 28 {
@@ -1144,7 +1145,7 @@ func parseM4AInfo(filePath string) (codec string, sampleRate int, channels int, 
 						channels = 2
 					}
 				}
-			} else if boxType == "ec-3" || boxType == "ac-3" {
+			case "ec-3", "ac-3":
 				payloadSize := size - headerSize
 				payload := make([]byte, payloadSize)
 				if _, err := io.ReadFull(f, payload); err == nil && len(payload) >= 28 {
@@ -1173,9 +1174,10 @@ func parseM4AInfo(filePath string) (codec string, sampleRate int, channels int, 
 
 			if isContainer {
 				childStart := off + headerSize
-				if boxType == "stsd" {
+				switch boxType {
+				case "stsd":
 					childStart += 8
-				} else if boxType == "alac" {
+				case "alac":
 					childStart += 28
 				}
 				childEnd := off + size

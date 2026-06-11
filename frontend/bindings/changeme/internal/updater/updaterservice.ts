@@ -10,7 +10,8 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as $models from "./models.js";
 
 /**
- * CheckForUpdates queries the GitHub Releases API for the latest release
+ * CheckForUpdates reports that no updates are available via external channels,
+ * as the application is packaged and updated through system package managers / Microsoft Store.
  */
 export function CheckForUpdates(): $CancellablePromise<$models.UpdateInfo | null> {
     return $Call.ByID(2783407158).then(($result: any) => {
@@ -19,7 +20,7 @@ export function CheckForUpdates(): $CancellablePromise<$models.UpdateInfo | null
 }
 
 /**
- * DownloadAndInstallUpdate downloads the binary and triggers installation
+ * DownloadAndInstallUpdate is disabled since updates are managed externally by the system.
  */
 export function DownloadAndInstallUpdate(downloadURL: string, assetName: string): $CancellablePromise<void> {
     return $Call.ByID(1630227666, downloadURL, assetName);

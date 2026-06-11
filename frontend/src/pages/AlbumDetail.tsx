@@ -103,24 +103,22 @@ export const AlbumDetail: React.FC = () => {
   return (
     <div className="w-full flex flex-col gap-6 py-4 pb-28 select-none">
       
-      {/* Breadcrumbs Navigation */}
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 shrink-0">
+      {/* Back Navigation */}
+      <div className="flex items-center justify-between">
         <button 
           onClick={handleBackClick}
-          className="hover:text-[#fa586a] transition-colors duration-150 cursor-pointer flex items-center gap-0.5"
+          className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors w-fit group cursor-pointer"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
-          Albums
+          <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+          <span className="text-sm font-medium">Back</span>
         </button>
-        <span className="text-zinc-600">/</span>
-        <span className="text-zinc-200 truncate max-w-[250px]">{selectedAlbum.title}</span>
       </div>
 
       {/* Top Header Section */}
       <div className="flex flex-col md:flex-row items-center md:items-end gap-8 border-b border-white/5 pb-8">
         
         {/* Album Cover with rounded corners and drop shadow */}
-        <div className="relative w-[200px] h-[200px] md:w-[270px] md:h-[270px] rounded-2xl overflow-hidden bg-zinc-900 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] shrink-0 border border-white/5">
+        <div className="relative w-[200px] h-[200px] md:w-[270px] md:h-[270px] rounded-lg overflow-hidden bg-zinc-900 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] shrink-0 border border-white/5">
           <img 
             src={selectedAlbum.coverUrl} 
             alt={selectedAlbum.title} 

@@ -26,7 +26,6 @@ import { IsFirstTime, GetFolders } from '@/services/settingsService'
 import { GetSongs, ScanLibrary, GetAlbums } from '@/services/libraryService'
 import { OnboardingWelcome } from '@/components/settings/OnboardingWelcome'
 import { useSmoothScroll } from '@/hooks/useSmoothScroll'
-import { UpdateDialog } from '@/components/settings/UpdateDialog'
 
 
 const checkIfMaximized = (): boolean => {
@@ -143,16 +142,7 @@ function App() {
       })
   }, [])
 
-  // Auto update check on startup
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const autoCheck = useMusicStore.getState().autoCheckUpdates
-      if (autoCheck) {
-        useMusicStore.getState().checkForUpdates(false).catch(console.error)
-      }
-    }, 4000)
-    return () => clearTimeout(timer)
-  }, [])
+
 
   // Subscribe to native libmpv playback events from backend
   useEffect(() => {
@@ -243,6 +233,30 @@ function App() {
 
 
 
+  const handleHeaderMouseDown = (e: React.MouseEvent<HTMLElement>) => {
+    if (e.button !== 0) return
+
+    const target = e.target as HTMLElement
+    if (target.closest('.wails-no-drag')) {
+      return
+    }
+
+    if (isMaximized) {
+      Window.SetResizable(true)
+
+      const handleMouseUp = () => {
+        setTimeout(async () => {
+          const maximized = await Window.IsMaximised()
+          if (maximized) {
+            Window.SetResizable(false)
+          }
+        }, 150)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+  }
+
   return (
     <TooltipProvider>
       <SidebarProvider
@@ -263,7 +277,10 @@ function App() {
         <div className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
 
           {/* Header Title Bar Area (Draggable) */}
-          <header className={`w-full h-10 shrink-0 flex items-center justify-between px-6 z-30 relative wails-drag select-none transition-[padding-left] duration-200 ease-linear ${sidebarCollapsed ? 'pl-[32px]' : 'pl-[188px]'}`}>
+          <header 
+            onMouseDown={handleHeaderMouseDown}
+            className={`w-full h-10 shrink-0 flex items-center justify-between px-6 z-30 relative wails-drag select-none transition-[padding-left] duration-200 ease-linear ${sidebarCollapsed ? 'pl-[32px]' : 'pl-[188px]'}`}
+          >
             {/* Left side actions (No Drag) */}
             <div className="wails-no-drag flex items-center h-8">
               {!isMaximized && (
@@ -389,8 +406,7 @@ function App() {
             }}
           />
 
-          {/* Global Update Dialog Modal */}
-          <UpdateDialog />
+
         </div>
       </SidebarProvider>
     </TooltipProvider>

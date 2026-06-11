@@ -4,8 +4,6 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
-	_ "image/jpeg"
-	_ "image/png"
 	"os"
 	"path/filepath"
 	"strconv"
