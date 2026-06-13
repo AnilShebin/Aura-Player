@@ -365,7 +365,8 @@ func (s *LyricsService) PackLyrics(filePath string, lyricsText string, source st
 // embedLyricsInFile writes lyrics directly to the metadata tags of the audio file.
 func embedLyricsInFile(filePath string, lyricsText string) error {
 	ext := strings.ToLower(filepath.Ext(filePath))
-	if ext == ".mp3" {
+	switch ext {
+	case ".mp3":
 		tag, err := id3v2.Open(filePath, id3v2.Options{Parse: true})
 		if err != nil {
 			return fmt.Errorf("failed to open MP3 tags: %w", err)
@@ -383,7 +384,7 @@ func embedLyricsInFile(filePath string, lyricsText string) error {
 			return fmt.Errorf("failed to save MP3 tags: %w", err)
 		}
 		return nil
-	} else if ext == ".m4a" || ext == ".mp4" {
+	case ".m4a", ".mp4":
 		// Use FFmpeg to write the lyrics metadata securely to avoid container corruption on files with multiple tracks/cover art.
 		tempPath := filePath + ".tmp" + ext
 		cmd := exec.Command("ffmpeg", "-y", "-i", filePath, "-metadata", "lyrics="+lyricsText, "-c", "copy", tempPath)
@@ -412,6 +413,7 @@ func embedLyricsInFile(filePath string, lyricsText string) error {
 
 		_ = os.Remove(bakPath)
 		return nil
+	default:
+		return fmt.Errorf("unsupported file format for embedded lyrics: %s", ext)
 	}
-	return fmt.Errorf("unsupported file format for embedded lyrics: %s", ext)
 }
