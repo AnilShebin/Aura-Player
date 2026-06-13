@@ -1,10 +1,15 @@
 package lyrics
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/dhowden/tag"
 )
@@ -65,6 +70,94 @@ func extractRawLyrics(audioFilePath string) string {
 	embedded := m.Lyrics()
 	if strings.TrimSpace(embedded) != "" {
 		log.Printf("[LyricsService] Found embedded lyrics (length: %d)", len(embedded))
+		return strings.TrimSpace(embedded)
 	}
-	return strings.TrimSpace(embedded)
+
+	return ""
+}
+
+type LRCLibTrack struct {
+	ID           int     `json:"id"`
+	TrackName    string  `json:"trackName"`
+	ArtistName   string  `json:"artistName"`
+	AlbumName    string  `json:"albumName"`
+	Duration     float64 `json:"duration"`
+	PlainLyrics  string  `json:"plainLyrics"`
+	SyncedLyrics string  `json:"syncedLyrics"`
+}
+
+func fetchLyricsFromLRCLIB(artist, title, album string, durationSeconds int) string {
+	if artist == "" || title == "" {
+		return ""
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+
+	// 1. Try /api/get (exact lookup)
+	queryGet := url.Values{}
+	queryGet.Set("track_name", title)
+	queryGet.Set("artist_name", artist)
+	if album != "" {
+		queryGet.Set("album_name", album)
+	}
+	if durationSeconds > 0 {
+		queryGet.Set("duration", fmt.Sprintf("%d", durationSeconds))
+	}
+
+	reqURL := "https://lrclib.net/api/get?" + queryGet.Encode()
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err == nil {
+		req.Header.Set("User-Agent", "Aura-Player/1.0.13 (https://github.com/AnilShebin/Aura-Player)")
+		resp, err := client.Do(req)
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				var track LRCLibTrack
+				if err := json.NewDecoder(resp.Body).Decode(&track); err == nil {
+					log.Printf("[LyricsService] Exact signature hit via /api/get")
+					if track.SyncedLyrics != "" {
+						return track.SyncedLyrics
+					}
+					return track.PlainLyrics
+				}
+			}
+		}
+	}
+
+	// 2. Fallback to /api/search
+	querySearch := url.Values{}
+	querySearch.Set("q", fmt.Sprintf("%s - %s", artist, title))
+
+	searchURL := "https://lrclib.net/api/search?" + querySearch.Encode()
+	reqSearch, err := http.NewRequest("GET", searchURL, nil)
+	if err != nil {
+		return ""
+	}
+	reqSearch.Header.Set("User-Agent", "Aura-Player/1.0.13 (https://github.com/AnilShebin/Aura-Player)")
+
+	respSearch, err := client.Do(reqSearch)
+	if err != nil {
+		return ""
+	}
+	defer respSearch.Body.Close()
+
+	if respSearch.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	var tracks []LRCLibTrack
+	if err := json.NewDecoder(respSearch.Body).Decode(&tracks); err != nil {
+		return ""
+	}
+
+	if len(tracks) == 0 {
+		return ""
+	}
+
+	log.Printf("[LyricsService] Search results lookup hit: %d results", len(tracks))
+	bestTrack := tracks[0]
+	if bestTrack.SyncedLyrics != "" {
+		return bestTrack.SyncedLyrics
+	}
+	return bestTrack.PlainLyrics
 }

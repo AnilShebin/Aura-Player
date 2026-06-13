@@ -7,6 +7,7 @@ export {
 };
 
 export {
+    LRCLibSearchResult,
     LyricLine,
     LyricsResult
 } from "./models.js";

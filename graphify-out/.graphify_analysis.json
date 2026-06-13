@@ -1,0 +1,873 @@
+{
+  "communities": {
+    "0": [
+      "event",
+      "internal_library_service_go_db",
+      "internal_library_service_go_library_libraryservice",
+      "internal_library_service_go_library_libraryservice_getalbums",
+      "internal_library_service_go_library_libraryservice_getsongs",
+      "internal_library_service_go_library_libraryservice_getsongsbyalbum",
+      "internal_library_service_go_library_libraryservice_scanlibrary",
+      "internal_library_service_go_library_libraryservice_togglefavorite",
+      "internal_library_service_go_mutex",
+      "library_albumsummary",
+      "library_libraryservice_handlewatcherevent",
+      "library_libraryservice_notifylibrarychanged",
+      "library_libraryservice_parseaudiofile",
+      "library_libraryservice_startwatching",
+      "library_libraryservice_updatewatcherpaths",
+      "library_libraryservice_watchdirectoryrecursive",
+      "library_service",
+      "library_service_cleandisplaytitle",
+      "library_service_cleanm4ametadatastring",
+      "library_service_determinealbumartist",
+      "library_service_extractcopyrightfromraw",
+      "library_service_extractyearfromraw",
+      "library_service_isdigit",
+      "library_service_isvariousartists",
+      "library_service_newlibraryservice",
+      "library_service_normalizegroupstring",
+      "library_service_parseflacinfo",
+      "library_service_parsem4ainfo",
+      "library_service_parsemp3info",
+      "library_service_parsewavinfo",
+      "library_service_removecontrolchars",
+      "library_service_splitartistnames",
+      "library_song",
+      "metadata",
+      "watcher"
+    ],
+    "1": [
+      "components_app_sidebar",
+      "components_app_sidebar_appsidebar",
+      "components_app_sidebar_appsidebarprops",
+      "hooks_use_mobile",
+      "hooks_use_mobile_useismobile",
+      "ui_sidebar",
+      "ui_sidebar_sidebar",
+      "ui_sidebar_sidebarcontent",
+      "ui_sidebar_sidebarcontext",
+      "ui_sidebar_sidebarcontextprops",
+      "ui_sidebar_sidebarfooter",
+      "ui_sidebar_sidebargroup",
+      "ui_sidebar_sidebargroupaction",
+      "ui_sidebar_sidebargroupcontent",
+      "ui_sidebar_sidebargrouplabel",
+      "ui_sidebar_sidebarheader",
+      "ui_sidebar_sidebarinput",
+      "ui_sidebar_sidebarinset",
+      "ui_sidebar_sidebarmenu",
+      "ui_sidebar_sidebarmenuaction",
+      "ui_sidebar_sidebarmenubadge",
+      "ui_sidebar_sidebarmenubutton",
+      "ui_sidebar_sidebarmenubuttonvariants",
+      "ui_sidebar_sidebarmenuitem",
+      "ui_sidebar_sidebarmenuskeleton",
+      "ui_sidebar_sidebarmenusub",
+      "ui_sidebar_sidebarmenusubbutton",
+      "ui_sidebar_sidebarmenusubitem",
+      "ui_sidebar_sidebarprovider",
+      "ui_sidebar_sidebarrail",
+      "ui_sidebar_sidebarseparator",
+      "ui_sidebar_sidebartrigger",
+      "ui_sidebar_usesidebar"
+    ],
+    "2": [
+      "components_karaokeview",
+      "components_karaokeview_karaokeview",
+      "components_karaokeview_karaokeviewprops",
+      "lyrics_syncedlyrics",
+      "lyrics_syncedlyrics_instrumentaldots",
+      "lyrics_syncedlyrics_lyricline",
+      "lyrics_syncedlyrics_lyriclineitem",
+      "lyrics_syncedlyrics_lyriclineitemprops",
+      "lyrics_syncedlyrics_syncedlyricsprops",
+      "lyrics_ttmlmodels",
+      "lyrics_ttmlmodels_ttmlline",
+      "lyrics_ttmlmodels_ttmllyrics",
+      "lyrics_ttmlmodels_ttmlmetadata",
+      "lyrics_ttmlmodels_ttmlword",
+      "lyrics_ttmlparser",
+      "lyrics_ttmlparser_parsetimetoms",
+      "lyrics_ttmlparser_parsettml",
+      "lyrics_ttmlrenderer",
+      "lyrics_ttmlrenderer_islineequal",
+      "lyrics_ttmlrenderer_iswordequal",
+      "lyrics_ttmlrenderer_ttmllinecomponent",
+      "lyrics_ttmlrenderer_ttmlwordcomponent",
+      "lyrics_usettmlplayback",
+      "lyrics_usettmlplayback_usesmoothplaybacktime",
+      "lyrics_usettmlplayback_usettmlplayback"
+    ],
+    "3": [
+      "lyrics_lyricssearchpanel",
+      "lyrics_lyricssearchpanel_lyricssearchpanel",
+      "lyrics_lyricssearchpanel_lyricssearchpanelprops",
+      "pages_search",
+      "pages_search_categories",
+      "pages_search_recentsearchitem",
+      "pages_search_search",
+      "playlist_editplaylistmodal",
+      "playlist_editplaylistmodal_editplaylistmodalprops",
+      "playlist_editplaylistmodal_preset_gradients",
+      "services_libraryservice_albumsummary",
+      "shared_collectioncontextmenu_collectioncontextmenuprops",
+      "songs_songcontextmenu_songcontextmenuprops",
+      "songs_songpropertiesmodal",
+      "songs_songpropertiesmodal_songpropertiesmodal",
+      "songs_songpropertiesmodal_songpropertiesmodalprops",
+      "songs_songpropertiesmodal_tabtype",
+      "stores_musicstore",
+      "stores_musicstore_addtorecentlyplayed",
+      "stores_musicstore_musicstate",
+      "types_music",
+      "types_music_album",
+      "types_music_playlist",
+      "types_music_song"
+    ],
+    "4": [
+      "image",
+      "internal_settings_service_go_db",
+      "internal_settings_service_go_settings_settingsservice",
+      "internal_settings_service_go_settings_settingsservice_addfolder",
+      "internal_settings_service_go_settings_settingsservice_deletefolder",
+      "internal_settings_service_go_settings_settingsservice_getdb",
+      "internal_settings_service_go_settings_settingsservice_getfolders",
+      "internal_settings_service_go_settings_settingsservice_isfirsttime",
+      "internal_settings_service_go_settings_settingsservice_setfirsttime",
+      "internal_updater_service_go_updater_updaterservice",
+      "internal_updater_service_go_updater_updaterservice_checkforupdates",
+      "internal_updater_service_go_updater_updaterservice_downloadandinstallupdate",
+      "internal_updater_service_go_updater_updaterservice_getcurrentversion",
+      "library_resize",
+      "library_resize_getthumbnailpath",
+      "library_resize_resizenearest",
+      "main",
+      "main_main",
+      "settings_service",
+      "settings_service_newsettingsservice",
+      "updater_service",
+      "updater_service_newupdaterservice",
+      "updater_updateinfo"
+    ],
+    "5": [
+      "internal_lyrics_service_go_db",
+      "internal_lyrics_service_go_lyrics_lyricsservice",
+      "internal_lyrics_service_go_lyrics_lyricsservice_getlyrics",
+      "internal_lyrics_service_go_lyrics_lyricsservice_getonlinelyrics",
+      "internal_lyrics_service_go_lyrics_lyricsservice_packlyrics",
+      "internal_lyrics_service_go_lyrics_lyricsservice_savecustomlyrics",
+      "internal_lyrics_service_go_lyrics_lyricsservice_searchonlinelyrics",
+      "lyrics_lrclibsearchresult",
+      "lyrics_lrclibtrack",
+      "lyrics_lyricline",
+      "lyrics_lyricsresult",
+      "lyrics_parser",
+      "lyrics_parser_parselrc",
+      "lyrics_parser_parselyrics",
+      "lyrics_parser_parsesrtvtt",
+      "lyrics_provider",
+      "lyrics_provider_extractrawlyrics",
+      "lyrics_provider_fetchlyricsfromlrclib",
+      "lyrics_service",
+      "lyrics_service_embedlyricsinfile",
+      "lyrics_service_newlyricsservice",
+      "lyricsresult"
+    ],
+    "6": [
+      "frontend_bindings_changeme_internal_lyrics_lyricsservice_ts_lyrics_lyricsservice",
+      "frontend_bindings_changeme_internal_lyrics_lyricsservice_ts_lyrics_lyricsservice_getlyrics",
+      "frontend_bindings_changeme_internal_lyrics_lyricsservice_ts_lyrics_lyricsservice_getonlinelyrics",
+      "frontend_bindings_changeme_internal_lyrics_lyricsservice_ts_lyrics_lyricsservice_packlyrics",
+      "frontend_bindings_changeme_internal_lyrics_lyricsservice_ts_lyrics_lyricsservice_savecustomlyrics",
+      "frontend_bindings_changeme_internal_lyrics_lyricsservice_ts_lyrics_lyricsservice_searchonlinelyrics",
+      "lyrics_index",
+      "lyrics_lyricsservice_createtype2",
+      "lyrics_models",
+      "lyrics_models_createtype1",
+      "lyrics_models_lrclibsearchresult",
+      "lyrics_models_lrclibsearchresult_constructor",
+      "lyrics_models_lrclibsearchresult_createfrom",
+      "lyrics_models_lyricline",
+      "lyrics_models_lyricline_constructor",
+      "lyrics_models_lyricline_createfrom",
+      "lyrics_models_lyricsresult",
+      "lyrics_models_lyricsresult_constructor",
+      "lyrics_models_lyricsresult_createfrom"
+    ],
+    "7": [
+      "audio_playerbar",
+      "audio_playerbar_marqueetext",
+      "audio_playerbar_playerbar",
+      "audio_playerbar_progressbar",
+      "audio_volumecontrol",
+      "audio_volumecontrol_volumecontrol",
+      "audio_volumecontrol_volumecontrolprops",
+      "icons_losslessicon",
+      "icons_losslessicon_losslessicon",
+      "icons_losslessicon_losslessiconprops",
+      "icons_spatialaudioicon",
+      "icons_spatialaudioicon_spatialaudioicon",
+      "icons_spatialaudioicon_spatialaudioiconprops",
+      "pages_albumdetail",
+      "pages_albumdetail_albumdetail",
+      "player_fullscreenplayer",
+      "player_fullscreenplayer_fullscreenplayer",
+      "player_fullscreenplayer_mergetranslatedlyrics"
+    ],
+    "8": [
+      "frontend_bindings_changeme_internal_library_libraryservice_ts_library_libraryservice",
+      "frontend_bindings_changeme_internal_library_libraryservice_ts_library_libraryservice_getalbums",
+      "frontend_bindings_changeme_internal_library_libraryservice_ts_library_libraryservice_getsongs",
+      "frontend_bindings_changeme_internal_library_libraryservice_ts_library_libraryservice_getsongsbyalbum",
+      "frontend_bindings_changeme_internal_library_libraryservice_ts_library_libraryservice_scanlibrary",
+      "frontend_bindings_changeme_internal_library_libraryservice_ts_library_libraryservice_togglefavorite",
+      "library_index",
+      "library_libraryservice_createtype1",
+      "library_libraryservice_createtype3",
+      "library_models",
+      "library_models_albumsummary",
+      "library_models_albumsummary_constructor",
+      "library_models_albumsummary_createfrom",
+      "library_models_createtype1",
+      "library_models_createtype2",
+      "library_models_song",
+      "library_models_song_constructor",
+      "library_models_song_createfrom"
+    ],
+    "9": [
+      "ui_avatar",
+      "ui_avatar_avatar",
+      "ui_avatar_avatarbadge",
+      "ui_avatar_avatarfallback",
+      "ui_avatar_avatargroup",
+      "ui_avatar_avatargroupcount",
+      "ui_avatar_avatarimage",
+      "ui_breadcrumb",
+      "ui_breadcrumb_breadcrumb",
+      "ui_breadcrumb_breadcrumbellipsis",
+      "ui_breadcrumb_breadcrumbitem",
+      "ui_breadcrumb_breadcrumblink",
+      "ui_breadcrumb_breadcrumblist",
+      "ui_breadcrumb_breadcrumbpage",
+      "ui_breadcrumb_breadcrumbseparator",
+      "utils_utils_cn"
+    ],
+    "10": [
+      "ui_dropdown_menu",
+      "ui_dropdown_menu_dropdownmenu",
+      "ui_dropdown_menu_dropdownmenucheckboxitem",
+      "ui_dropdown_menu_dropdownmenucontent",
+      "ui_dropdown_menu_dropdownmenugroup",
+      "ui_dropdown_menu_dropdownmenuitem",
+      "ui_dropdown_menu_dropdownmenulabel",
+      "ui_dropdown_menu_dropdownmenuportal",
+      "ui_dropdown_menu_dropdownmenuradiogroup",
+      "ui_dropdown_menu_dropdownmenuradioitem",
+      "ui_dropdown_menu_dropdownmenuseparator",
+      "ui_dropdown_menu_dropdownmenushortcut",
+      "ui_dropdown_menu_dropdownmenusub",
+      "ui_dropdown_menu_dropdownmenusubcontent",
+      "ui_dropdown_menu_dropdownmenusubtrigger",
+      "ui_dropdown_menu_dropdownmenutrigger"
+    ],
+    "11": [
+      "frontend_bindings_changeme_internal_settings_settingsservice_ts_settings_settingsservice",
+      "frontend_bindings_changeme_internal_settings_settingsservice_ts_settings_settingsservice_addfolder",
+      "frontend_bindings_changeme_internal_settings_settingsservice_ts_settings_settingsservice_deletefolder",
+      "frontend_bindings_changeme_internal_settings_settingsservice_ts_settings_settingsservice_getdb",
+      "frontend_bindings_changeme_internal_settings_settingsservice_ts_settings_settingsservice_getfolders",
+      "frontend_bindings_changeme_internal_settings_settingsservice_ts_settings_settingsservice_isfirsttime",
+      "frontend_bindings_changeme_internal_settings_settingsservice_ts_settings_settingsservice_setfirsttime",
+      "settings_settingsservice_createtype1",
+      "settings_settingsservice_createtype2",
+      "sql_index",
+      "sql_models",
+      "sql_models_db",
+      "sql_models_db_constructor",
+      "sql_models_db_createfrom"
+    ],
+    "12": [
+      "internal_playback_player_go_app",
+      "internal_playback_player_go_mutex",
+      "internal_playback_player_go_playback_playbackservice",
+      "internal_playback_player_go_playback_playbackservice_close",
+      "internal_playback_player_go_playback_playbackservice_getstatus",
+      "internal_playback_player_go_playback_playbackservice_initplayer",
+      "internal_playback_player_go_playback_playbackservice_pause",
+      "internal_playback_player_go_playback_playbackservice_play",
+      "internal_playback_player_go_playback_playbackservice_resume",
+      "internal_playback_player_go_playback_playbackservice_seek",
+      "internal_playback_player_go_playback_playbackservice_setvolume",
+      "internal_playback_player_go_playerstatus",
+      "playback_player",
+      "playback_player_newplaybackservice"
+    ],
+    "13": [
+      "internal_playback_player_linux_go_app",
+      "internal_playback_player_linux_go_mutex",
+      "internal_playback_player_linux_go_playback_playbackservice",
+      "internal_playback_player_linux_go_playback_playbackservice_close",
+      "internal_playback_player_linux_go_playback_playbackservice_getstatus",
+      "internal_playback_player_linux_go_playback_playbackservice_initplayer",
+      "internal_playback_player_linux_go_playback_playbackservice_pause",
+      "internal_playback_player_linux_go_playback_playbackservice_play",
+      "internal_playback_player_linux_go_playback_playbackservice_resume",
+      "internal_playback_player_linux_go_playback_playbackservice_seek",
+      "internal_playback_player_linux_go_playback_playbackservice_setvolume",
+      "internal_playback_player_linux_go_playerstatus",
+      "playback_player_linux",
+      "playback_player_linux_newplaybackservice"
+    ],
+    "14": [
+      "ui_button",
+      "ui_button_button",
+      "ui_button_buttonvariants",
+      "ui_sheet",
+      "ui_sheet_sheet",
+      "ui_sheet_sheetclose",
+      "ui_sheet_sheetcontent",
+      "ui_sheet_sheetdescription",
+      "ui_sheet_sheetfooter",
+      "ui_sheet_sheetheader",
+      "ui_sheet_sheetoverlay",
+      "ui_sheet_sheetportal",
+      "ui_sheet_sheettitle",
+      "ui_sheet_sheettrigger"
+    ],
+    "15": [
+      "audio_queuedrawer",
+      "audio_queuedrawer_queuedrawer",
+      "hooks_usesmoothscroll",
+      "hooks_usesmoothscroll_usesmoothscroll",
+      "pages_songs",
+      "pages_songs_songs",
+      "pages_songs_sortfield",
+      "pages_songs_sortorder",
+      "songs_songrow",
+      "songs_songrow_song",
+      "songs_songrow_songrow",
+      "songs_songrow_songrowprops",
+      "src_app_app"
+    ],
+    "16": [
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice",
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice_close",
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice_getstatus",
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice_pause",
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice_play",
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice_resume",
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice_seek",
+      "frontend_bindings_changeme_internal_playback_playbackservice_ts_playback_playbackservice_setvolume",
+      "playback_index",
+      "playback_models",
+      "playback_models_playerstatus",
+      "playback_models_playerstatus_constructor",
+      "playback_models_playerstatus_createfrom"
+    ],
+    "17": [
+      "pages_favorites",
+      "pages_favorites_favorites",
+      "player_ambientbackdrop",
+      "player_ambientbackdrop_ambientbackdrop",
+      "services_libraryservice",
+      "services_libraryservice_getalbums",
+      "services_libraryservice_getsongs",
+      "services_libraryservice_getsongsbyalbum",
+      "services_libraryservice_scanlibrary",
+      "src_app",
+      "src_app_checkifmaximized",
+      "src_main"
+    ],
+    "18": [
+      "pages_listennow",
+      "pages_listennow_cardmarquee",
+      "pages_listennow_listennow",
+      "pages_playlistdetail",
+      "pages_playlistdetail_playlistdetail",
+      "playlist_editplaylistmodal_editplaylistmodal",
+      "playlist_playlistcover",
+      "playlist_playlistcover_playlistcover",
+      "playlist_playlistcover_playlistcoverprops",
+      "services_libraryservice_togglefavorite",
+      "songs_songcontextmenu",
+      "songs_songcontextmenu_songcontextmenu"
+    ],
+    "19": [
+      "ui_input",
+      "ui_input_input",
+      "ui_separator",
+      "ui_separator_separator",
+      "ui_skeleton",
+      "ui_skeleton_skeleton",
+      "ui_tooltip",
+      "ui_tooltip_tooltip",
+      "ui_tooltip_tooltipcontent",
+      "ui_tooltip_tooltipprovider",
+      "ui_tooltip_tooltiptrigger",
+      "utils_utils"
+    ],
+    "20": [
+      "internal_playback_player_stub_go_playback_playbackservice",
+      "internal_playback_player_stub_go_playback_playbackservice_close",
+      "internal_playback_player_stub_go_playback_playbackservice_getstatus",
+      "internal_playback_player_stub_go_playback_playbackservice_pause",
+      "internal_playback_player_stub_go_playback_playbackservice_play",
+      "internal_playback_player_stub_go_playback_playbackservice_resume",
+      "internal_playback_player_stub_go_playback_playbackservice_seek",
+      "internal_playback_player_stub_go_playback_playbackservice_setvolume",
+      "internal_playback_player_stub_go_playerstatus",
+      "playback_player_stub",
+      "playback_player_stub_newplaybackservice"
+    ],
+    "21": [
+      "frontend_bindings_changeme_internal_updater_updaterservice_ts_updater_updaterservice",
+      "frontend_bindings_changeme_internal_updater_updaterservice_ts_updater_updaterservice_checkforupdates",
+      "frontend_bindings_changeme_internal_updater_updaterservice_ts_updater_updaterservice_downloadandinstallupdate",
+      "frontend_bindings_changeme_internal_updater_updaterservice_ts_updater_updaterservice_getcurrentversion",
+      "updater_index",
+      "updater_models",
+      "updater_models_updateinfo",
+      "updater_models_updateinfo_constructor",
+      "updater_models_updateinfo_createfrom",
+      "updater_updaterservice_createtype1"
+    ],
+    "22": [
+      "internal_playback_mpv_go_playback_mpvevent",
+      "internal_playback_mpv_go_playback_mpveventendfile",
+      "internal_playback_mpv_go_playback_mpveventproperty",
+      "internal_playback_mpv_go_pointer",
+      "playback_mpv",
+      "playback_mpv_cgostring",
+      "playback_mpv_mpvcommand",
+      "playback_mpv_mpvsetflag",
+      "playback_mpv_mpvsetfloat",
+      "playback_mpv_mpvsetoptionstring"
+    ],
+    "23": [
+      "internal_playback_mpv_linux_go_playback_mpvevent",
+      "internal_playback_mpv_linux_go_playback_mpveventendfile",
+      "internal_playback_mpv_linux_go_playback_mpveventproperty",
+      "internal_playback_mpv_linux_go_pointer",
+      "playback_mpv_linux",
+      "playback_mpv_linux_cgostring",
+      "playback_mpv_linux_mpvcommand",
+      "playback_mpv_linux_mpvsetflag",
+      "playback_mpv_linux_mpvsetfloat",
+      "playback_mpv_linux_mpvsetoptionstring"
+    ],
+    "24": [
+      "lyrics_lyricsdrawer",
+      "lyrics_lyricsdrawer_lyricsdrawer",
+      "lyrics_syncedlyrics_syncedlyrics",
+      "pages_playlists",
+      "pages_playlists_playlists",
+      "settings_updatedialog",
+      "settings_updatedialog_updatedialog",
+      "shared_collectioncontextmenu",
+      "shared_collectioncontextmenu_collectioncontextmenu",
+      "stores_musicstore_usemusicstore"
+    ],
+    "25": [
+      "services_settingsservice",
+      "services_settingsservice_addfolder",
+      "services_settingsservice_createtype0",
+      "services_settingsservice_deletefolder",
+      "services_settingsservice_getfolders",
+      "services_settingsservice_isfirsttime",
+      "services_settingsservice_setfirsttime",
+      "settings_onboardingwelcome",
+      "settings_onboardingwelcome_onboardingwelcome",
+      "settings_onboardingwelcome_onboardingwelcomeprops"
+    ],
+    "26": [
+      "albums_albumartwork",
+      "albums_albumartwork_albumartwork",
+      "albums_albumartwork_albumartworkprops",
+      "albums_albumcard",
+      "albums_albumcard_albumcard",
+      "albums_albumcard_albumcardprops",
+      "pages_albums",
+      "pages_albums_albums",
+      "pages_albums_usegridcolumns"
+    ],
+    "27": [
+      "services_lyricsservice",
+      "services_lyricsservice_getlyrics",
+      "services_lyricsservice_getonlinelyrics",
+      "services_lyricsservice_lrclibsearchresult",
+      "services_lyricsservice_lyricline",
+      "services_lyricsservice_lyricsresult",
+      "services_lyricsservice_packlyrics",
+      "services_lyricsservice_savecustomlyrics",
+      "services_lyricsservice_searchonlinelyrics"
+    ],
+    "28": [
+      "pages_settings",
+      "pages_settings_settings",
+      "pages_settings_settingsection",
+      "services_updaterservice",
+      "services_updaterservice_checkforupdates",
+      "services_updaterservice_downloadandinstallupdate",
+      "services_updaterservice_getcurrentversion",
+      "services_updaterservice_updateinfo"
+    ],
+    "29": [
+      "services_playbackservice",
+      "services_playbackservice_pause",
+      "services_playbackservice_play",
+      "services_playbackservice_resume",
+      "services_playbackservice_seek",
+      "services_playbackservice_setvolume"
+    ],
+    "30": [
+      "window_controls_titlebar",
+      "window_controls_titlebar_titlebar",
+      "window_controls_titlebar_titlebarprops",
+      "window_controls_windowcontrols",
+      "window_controls_windowcontrols_windowcontrols",
+      "window_controls_windowcontrols_windowcontrolsprops"
+    ],
+    "31": [
+      "playlist_createplaylistmodal",
+      "playlist_createplaylistmodal_createplaylistmodal",
+      "playlist_createplaylistmodal_createplaylistmodalprops",
+      "playlist_createplaylistmodal_preset_gradients"
+    ],
+    "32": [
+      "ui_collapsible",
+      "ui_collapsible_collapsible",
+      "ui_collapsible_collapsiblecontent",
+      "ui_collapsible_collapsibletrigger"
+    ],
+    "33": [
+      "aura_music_greetservice",
+      "greetservice",
+      "greetservice_greet"
+    ],
+    "34": [
+      "changeme_greetservice",
+      "changeme_greetservice_greet",
+      "changeme_index"
+    ],
+    "35": [
+      "internal_lyrics_sys_other_go_cmd",
+      "lyrics_sys_other",
+      "lyrics_sys_other_configurecommand"
+    ],
+    "36": [
+      "internal_lyrics_sys_windows_go_cmd",
+      "lyrics_sys_windows",
+      "lyrics_sys_windows_configurecommand"
+    ],
+    "37": [
+      "internal_playback_events_go_playback_playbackservice",
+      "internal_playback_events_go_playback_playbackservice_pumpevents",
+      "internal_playback_events_go_playback_playbackservice_statusemitloop"
+    ],
+    "38": [
+      "internal_playback_events_linux_go_playback_playbackservice",
+      "internal_playback_events_linux_go_playback_playbackservice_pumpevents",
+      "internal_playback_events_linux_go_playback_playbackservice_statusemitloop"
+    ],
+    "39": [
+      "playback_playerstatus",
+      "playback_status"
+    ],
+    "40": [
+      "app_library_service"
+    ],
+    "41": [
+      "app_lyrics_service"
+    ],
+    "42": [
+      "app_playback_service"
+    ],
+    "43": [
+      "app_search_service"
+    ],
+    "44": [
+      "app_settings_service"
+    ],
+    "45": [
+      "cache_artwork"
+    ],
+    "46": [
+      "cache_manager"
+    ],
+    "47": [
+      "common_constants"
+    ],
+    "48": [
+      "common_errors"
+    ],
+    "49": [
+      "common_logger"
+    ],
+    "50": [
+      "database_sqlite"
+    ],
+    "51": [
+      "events_playback"
+    ],
+    "52": [
+      "frontend_vite_config"
+    ],
+    "53": [
+      "internal_eventcreate"
+    ],
+    "54": [
+      "internal_eventdata_d"
+    ],
+    "55": [
+      "library_importer"
+    ],
+    "56": [
+      "library_scanner"
+    ],
+    "57": [
+      "library_watcher"
+    ],
+    "58": [
+      "metadata_artwork"
+    ],
+    "59": [
+      "metadata_extractor"
+    ],
+    "60": [
+      "metadata_tags"
+    ],
+    "61": [
+      "models_album"
+    ],
+    "62": [
+      "models_artist"
+    ],
+    "63": [
+      "models_playlist"
+    ],
+    "64": [
+      "models_track"
+    ],
+    "65": [
+      "playback_events"
+    ],
+    "66": [
+      "playback_events_linux"
+    ],
+    "67": [
+      "playback_queue"
+    ],
+    "68": [
+      "search_indexer"
+    ],
+    "69": [
+      "search_service"
+    ],
+    "70": [
+      "settings_index"
+    ],
+    "71": [
+      "settings_models"
+    ],
+    "72": [
+      "src_vite_env_d"
+    ],
+    "73": [
+      "updater_updater_other"
+    ],
+    "74": [
+      "updater_updater_windows"
+    ]
+  },
+  "cohesion": {
+    "0": 0.11764705882352941,
+    "1": 0.09090909090909091,
+    "2": 0.14,
+    "3": 0.14855072463768115,
+    "4": 0.1067193675889328,
+    "5": 0.16883116883116883,
+    "6": 0.12280701754385964,
+    "7": 0.1830065359477124,
+    "8": 0.12418300653594772,
+    "9": 0.23333333333333334,
+    "10": 0.125,
+    "11": 0.15384615384615385,
+    "12": 0.2087912087912088,
+    "13": 0.2087912087912088,
+    "14": 0.16483516483516483,
+    "15": 0.21794871794871795,
+    "16": 0.16666666666666666,
+    "17": 0.24242424242424243,
+    "18": 0.21212121212121213,
+    "19": 0.16666666666666666,
+    "20": 0.2,
+    "21": 0.2222222222222222,
+    "22": 0.3111111111111111,
+    "23": 0.3111111111111111,
+    "24": 0.35555555555555557,
+    "25": 0.28888888888888886,
+    "26": 0.3055555555555556,
+    "27": 0.2222222222222222,
+    "28": 0.2857142857142857,
+    "29": 0.3333333333333333,
+    "30": 0.4,
+    "31": 0.5,
+    "32": 0.5,
+    "33": 0.6666666666666666,
+    "34": 0.6666666666666666,
+    "35": 0.6666666666666666,
+    "36": 0.6666666666666666,
+    "37": 0.6666666666666666,
+    "38": 0.6666666666666666,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0,
+    "45": 1.0,
+    "46": 1.0,
+    "47": 1.0,
+    "48": 1.0,
+    "49": 1.0,
+    "50": 1.0,
+    "51": 1.0,
+    "52": 1.0,
+    "53": 1.0,
+    "54": 1.0,
+    "55": 1.0,
+    "56": 1.0,
+    "57": 1.0,
+    "58": 1.0,
+    "59": 1.0,
+    "60": 1.0,
+    "61": 1.0,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0,
+    "66": 1.0,
+    "67": 1.0,
+    "68": 1.0,
+    "69": 1.0,
+    "70": 1.0,
+    "71": 1.0,
+    "72": 1.0,
+    "73": 1.0,
+    "74": 1.0
+  },
+  "gods": [
+    {
+      "id": "utils_utils_cn",
+      "label": "cn()",
+      "degree": 67
+    },
+    {
+      "id": "stores_musicstore_usemusicstore",
+      "label": "useMusicStore",
+      "degree": 49
+    },
+    {
+      "id": "internal_library_service_go_library_libraryservice",
+      "label": "LibraryService",
+      "degree": 16
+    },
+    {
+      "id": "types_music_song",
+      "label": "Song",
+      "degree": 15
+    },
+    {
+      "id": "internal_playback_player_go_playback_playbackservice",
+      "label": "PlaybackService",
+      "degree": 12
+    },
+    {
+      "id": "internal_playback_player_linux_go_playback_playbackservice",
+      "label": "PlaybackService",
+      "degree": 12
+    },
+    {
+      "id": "hooks_usesmoothscroll_usesmoothscroll",
+      "label": "useSmoothScroll()",
+      "degree": 9
+    },
+    {
+      "id": "internal_playback_player_stub_go_playback_playbackservice",
+      "label": "PlaybackService",
+      "degree": 9
+    },
+    {
+      "id": "internal_settings_service_go_settings_settingsservice",
+      "label": "SettingsService",
+      "degree": 9
+    },
+    {
+      "id": "lyrics_parser_parselyrics",
+      "label": "parseLyrics()",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "main()",
+      "target": "NewLibraryService()",
+      "source_files": [
+        "main.go",
+        "internal/library/service.go"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "main()",
+      "target": "NewLyricsService()",
+      "source_files": [
+        "main.go",
+        "internal/lyrics/service.go"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "main()",
+      "target": "GetThumbnailPath()",
+      "source_files": [
+        "main.go",
+        "internal/library/resize.go"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "main()",
+      "target": "NewSettingsService()",
+      "source_files": [
+        "main.go",
+        "internal/settings/service.go"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "main()",
+      "target": "NewUpdaterService()",
+      "source_files": [
+        "main.go",
+        "internal/updater/service.go"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

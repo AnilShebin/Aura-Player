@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { KaraokeView } from '@/features/lyrics/components/KaraokeView'
+import { parseTTML } from '@/features/lyrics/ttmlParser'
 
 interface LyricLine {
   time: number
@@ -167,7 +168,9 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
   hideScrollbar = false
 }) => {
   const rawLyricsResult = useMusicStore(state => state.rawLyricsResult)
-
+  const lyricsOffset = useMusicStore(state => state.lyricsOffset)
+  const forcePlain = useMusicStore(state => state.forcePlain)
+  const lyricsLoading = useMusicStore(state => state.lyricsLoading)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -192,18 +195,39 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
     }
   }, [])
 
+  // If TTML lyrics are available, we can parse them into standard lines when forcePlain is enabled
+  const ttmlLines = useMemo(() => {
+    if (rawLyricsResult?.hasTTML && rawLyricsResult.raw && forcePlain) {
+      try {
+        const parsed = parseTTML(rawLyricsResult.raw)
+        return parsed.lines.map((l: any) => ({
+          time: l.startMs / 1000,
+          text: l.text,
+          is_translation: false
+        }))
+      } catch (e) {
+        console.error('Failed to parse TTML for plain text view:', e)
+      }
+    }
+    return null
+  }, [rawLyricsResult, forcePlain])
+
+  const activeLyrics = useMemo(() => {
+    return ttmlLines || lyrics
+  }, [lyrics, ttmlLines])
+
   const processedLines = useMemo(() => {
-    if (!lyrics || lyrics.length === 0) return []
+    if (!activeLyrics || activeLyrics.length === 0) return []
     const lines: Array<{ time: number; original: string; translation?: string; isGap: boolean }> = []
-    if (lyrics.length > 0 && lyrics[0].time > 1.5) {
+    if (activeLyrics.length > 0 && activeLyrics[0].time > 1.5) {
       lines.push({ time: 0, original: '...', isGap: true })
     }
 
-    for (let i = 0; i < lyrics.length; i++) {
-      const line = lyrics[i]
+    for (let i = 0; i < activeLyrics.length; i++) {
+      const line = activeLyrics[i]
       if (line.is_translation) continue
 
-      const nextLine = lyrics[i + 1]
+      const nextLine = activeLyrics[i + 1]
       const translation = (nextLine && nextLine.is_translation && nextLine.time === line.time) ? nextLine.text : undefined
       const isGapLine = line.text.includes('...') || line.text.trim() === ''
 
@@ -214,7 +238,7 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
         isGap: isGapLine
       })
 
-      const nextOriginal = lyrics.slice(i + 1).find(l => !l.is_translation)
+      const nextOriginal = activeLyrics.slice(i + 1).find(l => !l.is_translation)
       if (nextOriginal && (nextOriginal.time - line.time) > 8) {
         lines.push({ time: line.time + 4.5, original: '...', isGap: true })
       }
@@ -230,16 +254,21 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
       result.push(current)
     }
     return result
-  }, [lyrics])
+  }, [activeLyrics])
+
+  const isSyncedLyricsAvailable = useMemo(() => {
+    return activeLyrics && activeLyrics.length > 0 && activeLyrics.some(line => line.time > 0)
+  }, [activeLyrics])
 
   const isSynced = useMemo(() => {
-    return lyrics && lyrics.length > 0 && lyrics.some(line => line.time > 0)
-  }, [lyrics])
+    return isSyncedLyricsAvailable && !forcePlain
+  }, [isSyncedLyricsAvailable, forcePlain])
 
   const activeIdx = isSynced
     ? processedLines.findIndex((line, i) => {
       const nextLine = processedLines[i + 1]
-      return currentTime >= line.time && (!nextLine || currentTime < nextLine.time)
+      const adjustedTime = currentTime + lyricsOffset
+      return adjustedTime >= line.time && (!nextLine || adjustedTime < nextLine.time)
     })
     : -1
 
@@ -281,11 +310,11 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
     if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
   }, [lyrics, activeTrack.title])
 
-  if (rawLyricsResult?.hasTTML && rawLyricsResult.raw) {
+  if (rawLyricsResult?.hasTTML && rawLyricsResult.raw && !forcePlain) {
     return (
       <KaraokeView
         rawTTML={rawLyricsResult.raw}
-        currentTime={currentTime}
+        currentTime={currentTime + lyricsOffset}
         isPlaying={isPlaying}
         onSeek={onSeek}
         showLyrics={showLyrics}
@@ -300,7 +329,6 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
       />
     )
   }
-
 
   const handleScroll = () => {
     if (isProgrammaticScroll.current) return
@@ -326,7 +354,18 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
     if (!isManualScrolling) setIsManualScrolling(true)
   }
 
-  if (!lyrics || lyrics.length === 0) {
+  if (lyricsLoading) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center px-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+          <p className="text-white/60 text-sm font-medium animate-pulse">Searching lyrics...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!activeLyrics || activeLyrics.length === 0) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center px-8">
         <h3 className="text-foreground/90 text-[18px] font-bold text-center mb-2">
@@ -340,63 +379,65 @@ export const SyncedLyrics: React.FC<SyncedLyricsProps> = ({
   }
 
   return (
-    <div
-      ref={containerRef}
-      onScroll={handleScroll}
-      onWheel={handleInteraction}
-      onTouchStart={handleInteraction}
-      className={`relative w-full h-full overflow-y-auto overflow-x-hidden select-none ${hideScrollbar ? 'scrollbar-hidden' : `custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} ${compact ? 'px-8' : 'px-6 md:px-10 lg:px-12'}`}
-      style={{
-        maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
-        WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
-        scrollBehavior: 'auto'
-      }}
-    >
-      <div style={{ height: compact ? '15vh' : '35vh' }} />
+    <div className="relative w-full h-full overflow-hidden">
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        onWheel={handleInteraction}
+        onTouchStart={handleInteraction}
+        className={`relative w-full h-full overflow-y-auto overflow-x-hidden select-none ${hideScrollbar ? 'scrollbar-hidden' : `custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} ${compact ? 'px-8' : 'px-6 md:px-10 lg:px-12'}`}
+        style={{
+          maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
+          scrollBehavior: 'auto'
+        }}
+      >
+        <div style={{ height: compact ? '15vh' : '35vh' }} />
 
-      <div className={compact ? 'space-y-0' : 'space-y-10'}>
-        {processedLines.map((line, i) => {
-          const isActive = activeIdx === i
-          const isPast = activeIdx > i
-          const isFuture = !isActive && !isPast
+        <div className={compact ? 'space-y-0' : 'space-y-10'}>
+          {processedLines.map((line, i) => {
+            const isActive = activeIdx === i
+            const isPast = activeIdx > i
+            const isFuture = !isActive && !isPast
 
-          return (
-            <LyricLineItem
-              key={`${i}-${line.time}`}
-              line={line}
-              isActive={isActive}
-              isPast={isPast}
-              isFuture={isFuture}
-              isManualScrolling={isManualScrolling}
-              compact={compact ?? false}
-              showOriginal={showOriginal}
-              showTranslation={showTranslation}
-              isPlaying={isPlaying}
-              onSeek={(time) => {
-                onSeek(time)
-                setIsManualScrolling(false)
-              }}
-              setRef={el => { lineRefs.current[i] = el }}
-              isSynced={isSynced}
-              index={i}
-              totalLines={processedLines.length}
-              activeIdx={activeIdx}
-              noHorizontalShift={noHorizontalShift}
-            />
-          )
-        })}
-      </div>
-
-      {/* Credits block is contiguous with the lyrics list, separated by standard margins */}
-      <div className={`w-full border-t border-border/40 ${compact ? 'mt-8 pb-10 pt-4' : 'mt-20 pb-20 pl-6 pt-12'}`}>
-        <div className="flex gap-1.5 items-baseline mb-1">
-          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Written by:</span>
-          <span className={`font-normal text-foreground/85 leading-tight ${compact ? 'text-[14px]' : 'text-[18px]'}`}>{activeTrack.artist}</span>
+            return (
+              <LyricLineItem
+                key={`${i}-${line.time}`}
+                line={line}
+                isActive={isActive}
+                isPast={isPast}
+                isFuture={isFuture}
+                isManualScrolling={isManualScrolling}
+                compact={compact ?? false}
+                showOriginal={showOriginal}
+                showTranslation={showTranslation}
+                isPlaying={isPlaying}
+                onSeek={(time) => {
+                  onSeek(time)
+                  setIsManualScrolling(false)
+                }}
+                setRef={el => { lineRefs.current[i] = el }}
+                isSynced={isSynced}
+                index={i}
+                totalLines={processedLines.length}
+                activeIdx={activeIdx}
+                noHorizontalShift={noHorizontalShift}
+              />
+            )
+          })}
         </div>
-      </div>
 
-      {/* Spacer to allow centering the last lines of the song */}
-      <div style={{ height: compact ? '15vh' : '50vh' }} />
+        {/* Credits block is contiguous with the lyrics list, separated by standard margins */}
+        <div className={`w-full border-t border-border/40 ${compact ? 'mt-8 pb-10 pt-4' : 'mt-20 pb-20 pl-6 pt-12'}`}>
+          <div className="flex gap-1.5 items-baseline mb-1">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Written by:</span>
+            <span className={`font-normal text-foreground/85 leading-tight ${compact ? 'text-[14px]' : 'text-[18px]'}`}>{activeTrack.artist}</span>
+          </div>
+        </div>
+
+        {/* Spacer to allow centering the last lines of the song */}
+        <div style={{ height: compact ? '15vh' : '50vh' }} />
+      </div>
     </div>
   )
 }

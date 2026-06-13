@@ -1,16 +1,16 @@
 import React, { useMemo, useState, useCallback } from 'react'
-import { Play, Shuffle, Pencil, Music, Clock, MoreHorizontal } from 'lucide-react'
+import { Play, Pause, Shuffle, Pencil, Music, Clock, MoreHorizontal } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import { PlaylistCover } from '@/components/playlist/PlaylistCover'
 import { EditPlaylistModal } from '@/components/playlist/EditPlaylistModal'
 import { SongContextMenu } from '@/components/songs/SongContextMenu'
+import { ToggleFavorite } from '@/services/libraryService'
 
 export const PlaylistDetail: React.FC = () => {
   const selectedPlaylist = useMusicStore(state => state.selectedPlaylist)
   const setSelectedPlaylist = useMusicStore(state => state.setSelectedPlaylist)
   const librarySongs = useMusicStore(state => state.librarySongs)
   const playSongDirect = useMusicStore(state => state.playSongDirect)
-  const playingSong = useMusicStore(state => state.playingSong)
   const updatePlaylist = useMusicStore(state => state.updatePlaylist)
   const deletePlaylist = useMusicStore(state => state.deletePlaylist)
   const triggerToast = useMusicStore(state => state.triggerToast)
@@ -19,6 +19,21 @@ export const PlaylistDetail: React.FC = () => {
   const [isPlaylistMenuOpen, setIsPlaylistMenuOpen] = useState(false)
   const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null)
   const [activeSong, setActiveSong] = useState<any>(null)
+
+  const playingSongId = useMusicStore(state => state.playingSong?.id)
+  const isPlaying = useMusicStore(state => state.isPlaying)
+  const handlePlayPause = useMusicStore(state => state.handlePlayPause)
+  const storeToggleFavorite = useMusicStore(state => state.toggleFavorite)
+
+  const handleToggleFavorite = useCallback(async (songId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await ToggleFavorite(songId)
+      storeToggleFavorite(songId)
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err)
+    }
+  }, [storeToggleFavorite])
 
   const handleMenuClick = (e: React.MouseEvent<HTMLButtonElement>, song: any) => {
     e.stopPropagation()
@@ -225,81 +240,136 @@ export const PlaylistDetail: React.FC = () => {
       </div>
 
       {/* Song List Area */}
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-1.5">
         
         {/* Table Header */}
-        <div className="flex items-center px-4 py-2 border-b border-white/[0.04] text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
-          <span className="w-10 text-center shrink-0">#</span>
-          <span className="flex-1 min-w-0">Song</span>
-          <span className="w-48 hidden md:block truncate">Artist</span>
-          <span className="w-48 hidden lg:block truncate">Album</span>
-          <span className="w-20 text-right shrink-0 pr-4 flex items-center justify-end gap-1.5"><Clock size={11} /></span>
+        <div className="grid grid-cols-[40px_1fr_40px_60px_40px] md:grid-cols-[40px_1.5fr_1fr_40px_60px_40px] gap-2 items-center px-3 py-2 border-b border-white/[0.04] text-[11px] font-medium text-zinc-500 uppercase tracking-wider select-none">
+          <span className="text-center">#</span>
+          <span>Song</span>
+          <span className="hidden md:block">Album</span>
+          <span className="text-center"></span>
+          <span className="text-right pr-2 flex items-center justify-end gap-1.5"><Clock size={11} /></span>
+          <span className="text-center"></span>
         </div>
 
         {/* Table Rows */}
         {playlistSongs.length > 0 ? (
-          <div className="flex flex-col">
-            {playlistSongs.map((song, idx) => {
-              const isCurrent = playingSong && (playingSong.id === song.id || playingSong.filePath === song.filePath)
+          <div className="flex flex-col gap-[2px]">
+            {playlistSongs.map((song, index) => {
+              const isCurrentPlaying = playingSongId === song.id
               return (
                 <div
-                  key={song.id || idx}
-                  onDoubleClick={() => playSongDirect(song, playlistSongs)}
-                  className="flex items-center px-4 py-2 hover:bg-white/[0.03] active:bg-white/[0.01] rounded-lg group transition-colors duration-150 cursor-pointer text-[12px]"
+                  key={song.id || index}
+                  onClick={() => {
+                    if (isCurrentPlaying) {
+                      handlePlayPause()
+                    } else {
+                      playSongDirect(song, playlistSongs)
+                    }
+                  }}
+                  className="grid grid-cols-[40px_1fr_40px_60px_40px] md:grid-cols-[40px_1.5fr_1fr_40px_60px_40px] gap-2 items-center px-3 py-2.5 rounded-lg hover:bg-white/[0.04] group cursor-pointer transition-colors duration-150 transform-gpu"
+                  style={{ contain: 'layout style paint' }}
                 >
-                  {/* index */}
-                  <span className="w-10 text-center shrink-0 text-zinc-500 group-hover:text-zinc-300 transition-colors">
-                    {idx + 1}
-                  </span>
+                  {/* Unified indicator: number / waveform / pause / hover-play-pause */}
+                  <div className="relative flex justify-center items-center w-full" style={{ height: '20px' }}>
+                    {/* DEFAULT state: fades out on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-100 group-hover:opacity-0">
+                      {isCurrentPlaying && isPlaying ? (
+                        /* 4-bar animated waveform when playing */
+                        <div className="flex gap-[2px] items-end" style={{ height: '14px' }}>
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '6px',  transformOrigin: 'bottom', animation: 'musicbar 0.8s ease-in-out 0s infinite' }} />
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '11px', transformOrigin: 'bottom', animation: 'musicbar 0.8s ease-in-out 0.15s infinite' }} />
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '8px',  transformOrigin: 'bottom', animation: 'musicbar 0.8s ease-in-out 0.3s infinite' }} />
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '10px', transformOrigin: 'bottom', animation: 'musicbar 0.8s ease-in-out 0.45s infinite' }} />
+                        </div>
+                      ) : isCurrentPlaying && !isPlaying ? (
+                        /* 4 settled bars when paused */
+                        <div className="flex gap-[2px] items-end" style={{ height: '14px' }}>
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '4px' }} />
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '4px' }} />
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '4px' }} />
+                          <span className="w-[2.5px] bg-[#fa586a] rounded-full" style={{ height: '4px' }} />
+                        </div>
+                      ) : (
+                        <span className="text-[12px] text-zinc-500 font-semibold">{index + 1}</span>
+                      )}
+                    </div>
 
-                  {/* Song Title and Thumbnail info */}
-                  <div className="flex-1 min-w-0 flex items-center gap-3">
+                    {/* HOVER state: fades in on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-100 group-hover:opacity-100">
+                      {isCurrentPlaying && isPlaying ? (
+                        <Pause size={12} fill="currentColor" className="text-[#fa586a]" />
+                      ) : isCurrentPlaying && !isPlaying ? (
+                        <Play size={12} fill="currentColor" className="text-[#fa586a]" />
+                      ) : (
+                        <Play size={12} fill="currentColor" className="text-zinc-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Track Title + Artist */}
+                  <div className="flex items-center gap-3 min-w-0 pr-4">
+                    {/* Mini Cover Thumbnail inside Playlist Detail */}
                     <div className="w-8 h-8 rounded bg-zinc-800 shrink-0 overflow-hidden relative border border-white/5">
                       {song.coverUrl ? (
                         <img src={song.coverUrl} className="w-full h-full object-cover" alt="" />
                       ) : (
                         <Music className="w-4 h-4 text-zinc-600 m-2" />
                       )}
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          playSongDirect(song, playlistSongs)
-                        }}
-                        className="absolute inset-0 bg-black/50 items-center justify-center hidden group-hover:flex transition-opacity"
-                      >
-                        <Play size={10} fill="currentColor" className="text-white" />
-                      </div>
                     </div>
+
                     <div className="flex flex-col min-w-0">
-                      <span className={`font-normal truncate leading-tight ${isCurrent ? 'text-[#fa586a] font-medium' : 'text-zinc-100'}`}>
+                      <span className={`text-[14px] ${isCurrentPlaying ? 'font-medium text-[#fa586a]' : 'font-normal text-zinc-100'} truncate leading-tight transition-colors duration-150`}>
                         {song.title}
                       </span>
-                      <span className="text-zinc-400 font-light truncate mt-0.5 md:hidden">
-                        {song.artist}
-                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                        <span className="text-[12px] text-zinc-400 font-light truncate max-w-[80%] shrink-0">
+                          {song.artist}
+                        </span>
+                        {(song.bitDepth || song.sampleRate || song.bitrate || song.codec) && (
+                          <div className="flex items-center gap-1.5 text-[9px] font-mono text-zinc-500 uppercase tracking-wider overflow-hidden truncate">
+                            <span className="text-zinc-700 text-[8px] select-none shrink-0">•</span>
+                            <span className="truncate">
+                              {[
+                                song.bitDepth ? `${song.bitDepth}-BIT` : null,
+                                song.sampleRate ? `${(song.sampleRate / 1000).toFixed(1).replace('.0', '')} KHZ` : null,
+                                song.bitrate ? `${song.bitrate} KBPS` : null,
+                                song.codec
+                              ].filter(Boolean).join('  ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Artist */}
-                  <span className="w-48 hidden md:block truncate text-zinc-300 font-light">
-                    {song.artist}
-                  </span>
-
                   {/* Album */}
-                  <span className="w-48 hidden lg:block truncate text-zinc-400 font-light">
-                    {song.albumTitle}
+                  <span className="hidden md:block truncate text-zinc-400 font-light text-[13px]">
+                    {song.albumTitle || 'Unknown Album'}
                   </span>
 
-                  {/* Time Duration & Options actions */}
-                  <div className="w-20 shrink-0 text-right pr-4 text-zinc-400 font-light flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
-                    <span className="group-hover:hidden">{song.duration}</span>
-                    
+                  {/* Favorite Star */}
+                  <div className="flex justify-center items-center w-full" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={(e) => handleToggleFavorite(song.id, e)}
+                      className={`text-[13px] w-6 h-6 flex items-center justify-center hover:scale-110 transition-transform duration-150 ${song.isFavorite ? 'text-[#fa586a]' : 'text-zinc-600/40 hover:text-[#fa586a]/40'} cursor-pointer`}
+                    >
+                      ★
+                    </button>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="text-[12px] text-zinc-400 font-light text-right pr-2">
+                    {song.duration}
+                  </div>
+
+                  {/* Options three-dots */}
+                  <div className="flex justify-center items-center w-full" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={(e) => handleMenuClick(e, song)}
-                      className="hidden group-hover:flex w-6 h-6 rounded-full bg-white/5 hover:bg-white/10 items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                      title="Song Options"
+                      className="text-[#fa586a] hover:opacity-85 w-6 h-6 flex items-center justify-center transition-opacity duration-150 cursor-pointer"
                     >
-                      <MoreHorizontal size={13} />
+                      <MoreHorizontal size={16} />
                     </button>
 
                     {menuCoords && activeSong?.id === song.id && (

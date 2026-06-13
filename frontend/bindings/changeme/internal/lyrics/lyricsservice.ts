@@ -24,5 +24,46 @@ export function GetLyrics(filePath: string): $CancellablePromise<$models.LyricsR
     });
 }
 
+/**
+ * GetOnlineLyrics forces a lookup from LRCLIB, bypassing local sidecar/embedded files.
+ * It returns a structured LyricsResult with synced timing, lines, and raw text.
+ */
+export function GetOnlineLyrics(filePath: string): $CancellablePromise<$models.LyricsResult> {
+    return $Call.ByID(1481514762, filePath).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * PackLyrics embeds the lyrics text directly inside the audio file's metadata tags,
+ * removing any legacy sidecar files (.lrc, .ttml, etc.) from the folder.
+ * If direct embedding is not supported for the format, it falls back to saving a sidecar.
+ */
+export function PackLyrics(filePath: string, lyricsText: string, source: string): $CancellablePromise<$models.LyricsResult> {
+    return $Call.ByID(1619569814, filePath, lyricsText, source).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * SaveCustomLyrics caches the selected custom lyrics text and parses it to return to the UI.
+ */
+export function SaveCustomLyrics(filePath: string, lyricsText: string): $CancellablePromise<$models.LyricsResult> {
+    return $Call.ByID(1059049617, filePath, lyricsText).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * SearchOnlineLyrics queries LRCLIB for a search query and returns the matching results.
+ */
+export function SearchOnlineLyrics(query: string): $CancellablePromise<$models.LRCLibSearchResult[]> {
+    return $Call.ByID(1029338320, query).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
 // Private type creation functions
 const $$createType0 = $models.LyricsResult.createFrom;
+const $$createType1 = $models.LRCLibSearchResult.createFrom;
+const $$createType2 = $Create.Array($$createType1);

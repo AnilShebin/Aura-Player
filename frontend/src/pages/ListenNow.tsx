@@ -461,13 +461,13 @@ export const ListenNow: React.FC = () => {
                   <CardMarquee text={card.description} isParentHovered={hoveredCardId === card.id} />
                 </div>
 
-                {/* Play Button (black circle with white play arrow, shows on hover, positioned on the middle-right exactly like the screenshot) */}
+                {/* Play Button (transparent circle with white play arrow, shows on hover, positioned on the middle-right exactly like the screenshot) */}
                 <div 
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlayTopPick(card);
                   }}
-                  className="absolute right-5 bottom-[44px] w-9 h-9 rounded-full bg-black/80 hover:bg-black text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 active:scale-95 z-20 cursor-pointer"
+                  className="absolute right-5 bottom-[44px] w-9 h-9 rounded-full bg-white/20 hover:bg-white/35 border border-white/10 text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 active:scale-95 z-20 cursor-pointer"
                 >
                   <Play size={14} fill="currentColor" className="ml-0.5 text-white" />
                 </div>
@@ -516,14 +516,14 @@ export const ListenNow: React.FC = () => {
                         e.stopPropagation()
                         handlePlaySongDirect(song)
                       }}
-                      className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
+                      className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/35 border border-white/10 flex items-center justify-center text-white transition-colors duration-150 cursor-pointer shadow-md"
                     >
                       <Play size={14} fill="white" className="ml-0.5 text-white" />
                     </button>
 
                     <button
                       onClick={(e) => handleSongOptionsClick(e, song)}
-                      className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white backdrop-blur-md transition-colors duration-150 cursor-pointer"
+                      className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/35 border border-white/10 flex items-center justify-center text-white transition-colors duration-150 cursor-pointer shadow-md"
                     >
                       <MoreHorizontal size={16} />
                     </button>

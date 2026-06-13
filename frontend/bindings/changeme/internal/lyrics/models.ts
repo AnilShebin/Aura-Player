@@ -6,6 +6,54 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 /**
+ * LRCLibSearchResult matches the track structure returned by LRCLIB search.
+ */
+export class LRCLibSearchResult {
+    "id": number;
+    "trackName": string;
+    "artistName": string;
+    "albumName": string;
+    "duration": number;
+    "plainLyrics": string;
+    "syncedLyrics": string;
+
+    /** Creates a new LRCLibSearchResult instance. */
+    constructor($$source: Partial<LRCLibSearchResult> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = 0;
+        }
+        if (!("trackName" in $$source)) {
+            this["trackName"] = "";
+        }
+        if (!("artistName" in $$source)) {
+            this["artistName"] = "";
+        }
+        if (!("albumName" in $$source)) {
+            this["albumName"] = "";
+        }
+        if (!("duration" in $$source)) {
+            this["duration"] = 0;
+        }
+        if (!("plainLyrics" in $$source)) {
+            this["plainLyrics"] = "";
+        }
+        if (!("syncedLyrics" in $$source)) {
+            this["syncedLyrics"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LRCLibSearchResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LRCLibSearchResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LRCLibSearchResult($$parsedSource as Partial<LRCLibSearchResult>);
+    }
+}
+
+/**
  * LyricLine represents a single parsed lyric line with timing.
  */
 export class LyricLine {
@@ -45,6 +93,7 @@ export class LyricsResult {
     "lines": LyricLine[];
     "raw": string;
     "hasTTML": boolean;
+    "source": string;
 
     /** Creates a new LyricsResult instance. */
     constructor($$source: Partial<LyricsResult> = {}) {
@@ -59,6 +108,9 @@ export class LyricsResult {
         }
         if (!("hasTTML" in $$source)) {
             this["hasTTML"] = false;
+        }
+        if (!("source" in $$source)) {
+            this["source"] = "";
         }
 
         Object.assign(this, $$source);

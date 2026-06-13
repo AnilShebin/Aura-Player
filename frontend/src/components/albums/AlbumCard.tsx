@@ -84,7 +84,7 @@ export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({
           <div className={`relative w-9 h-9 shrink-0 z-10 transition-opacity duration-200 ${isCurrentAlbum ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
             <button
               onClick={handlePlayClick}
-              className="w-full h-full rounded-full bg-black/75 hover:bg-black/90 flex items-center justify-center text-white transition-colors duration-150 cursor-pointer shadow-md"
+              className="w-full h-full rounded-full bg-white/20 hover:bg-white/35 border border-white/10 flex items-center justify-center text-white transition-colors duration-150 cursor-pointer shadow-md"
             >
               {/* DEFAULT non-hover state: Shows animated or settled waveform inside the circle */}
               <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-150 group-hover:opacity-0">
@@ -124,7 +124,7 @@ export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({
           {/* Options three-dots menu (bottom-right) */}
           <button
             onClick={handleOptionsClick}
-            className="w-9 h-9 rounded-full bg-black/75 hover:bg-black/90 flex items-center justify-center text-white transition-opacity duration-200 opacity-0 group-hover:opacity-100 cursor-pointer shadow-md z-10"
+            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/35 border border-white/10 flex items-center justify-center text-white transition-opacity duration-200 opacity-0 group-hover:opacity-100 cursor-pointer shadow-md z-10"
           >
             <MoreHorizontal size={15} />
           </button>

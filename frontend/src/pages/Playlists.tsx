@@ -77,14 +77,14 @@ export const Playlists: React.FC = () => {
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-between p-3 select-none">
                 <button
                   onClick={(e) => handlePlayPlaylistClick(e, playlist)}
-                  className="w-9 h-9 rounded-full bg-black/75 hover:bg-black/90 flex items-center justify-center text-white transition-colors duration-150 cursor-pointer shadow-md z-10"
+                  className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/35 border border-white/10 flex items-center justify-center text-white transition-colors duration-150 cursor-pointer shadow-md z-10"
                 >
                   <Play size={13} fill="white" className="ml-0.5 text-white" />
                 </button>
 
                 <button
                   onClick={(e) => handleOptionsClick(e, playlist)}
-                  className="w-9 h-9 rounded-full bg-black/75 hover:bg-black/90 flex items-center justify-center text-white transition-opacity duration-200 cursor-pointer shadow-md z-10"
+                  className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/35 border border-white/10 flex items-center justify-center text-white transition-opacity duration-200 cursor-pointer shadow-md z-10"
                 >
                   <MoreHorizontal size={15} />
                 </button>

@@ -18,6 +18,7 @@ type LyricsResult struct {
 	Lines   []LyricLine `json:"lines"`
 	Raw     string      `json:"raw"`
 	HasTTML bool        `json:"hasTTML"`
+	Source  string      `json:"source"`
 }
 
 // parseLyrics detects format and parses raw lyrics text into structured lines.

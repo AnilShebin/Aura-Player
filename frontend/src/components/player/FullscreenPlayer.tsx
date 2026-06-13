@@ -1,13 +1,84 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Pause, Play, SkipBack, SkipForward, Music2, Maximize2, Minimize2 } from 'lucide-react'
+import { X, Pause, Play, SkipBack, SkipForward, Music2, Maximize2, Minimize2, MoreHorizontal } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { SyncedLyrics } from '@/components/lyrics/SyncedLyrics'
+import { LyricsSearchPanel } from '@/components/lyrics/LyricsSearchPanel'
 import { LosslessIcon } from '@/components/icons/LosslessIcon'
 import { SpatialAudioIcon } from '@/components/icons/SpatialAudioIcon'
 import { VolumeControl } from '@/components/player-bar/audio/VolumeControl'
 
+function mergeTranslatedLyrics(originalRaw: string, translationRaw: string): string {
+  const originalLines = originalRaw.split(/\r?\n/)
+  const translationLines = translationRaw.split(/\r?\n/)
+
+  const hasTimestamps = originalLines.some(line => /^\[\d{2,}:\d{2,}(?:\.\d{2,})?\]/.test(line.trim()))
+  if (!hasTimestamps) {
+    const merged: string[] = []
+    const max = Math.max(originalLines.length, translationLines.length)
+    for (let i = 0; i < max; i++) {
+      if (i < originalLines.length) merged.push(originalLines[i])
+      if (i < translationLines.length && translationLines[i].trim()) {
+        merged.push(translationLines[i])
+      }
+    }
+    return merged.join('\n')
+  }
+
+  const parsedOriginal: { timeStr: string; text: string }[] = []
+  originalLines.forEach(line => {
+    const match = line.match(/^(\[\d{2,}:\d{2,}(?:\.\d{2,})?\])(.*)/)
+    if (match) {
+      parsedOriginal.push({ timeStr: match[1], text: match[2] })
+    } else if (line.trim()) {
+      parsedOriginal.push({ timeStr: '', text: line })
+    }
+  })
+
+  const translationHasTimestamps = translationLines.some(line => /^\[\d{2,}:\d{2,}(?:\.\d{2,})?\]/.test(line.trim()))
+  const merged: string[] = []
+
+  if (translationHasTimestamps) {
+    const parsedTranslation: { timeStr: string; text: string }[] = []
+    translationLines.forEach(line => {
+      const match = line.match(/^(\[\d{2,}:\d{2,}(?:\.\d{2,})?\])(.*)/)
+      if (match) {
+        parsedTranslation.push({ timeStr: match[1], text: match[2] })
+      }
+    })
+
+    parsedOriginal.forEach((orig, idx) => {
+      if (!orig.timeStr) {
+        merged.push(orig.text)
+        return
+      }
+      merged.push(`${orig.timeStr}${orig.text}`)
+      const matchedTrans = parsedTranslation.find(t => t.timeStr === orig.timeStr) || parsedTranslation[idx]
+      if (matchedTrans && matchedTrans.text.trim()) {
+        merged.push(`${orig.timeStr}${matchedTrans.text}`)
+      }
+    })
+  } else {
+    let transIdx = 0
+    parsedOriginal.forEach(orig => {
+      if (!orig.timeStr) {
+        merged.push(orig.text)
+        return
+      }
+      merged.push(`${orig.timeStr}${orig.text}`)
+      while (transIdx < translationLines.length && !translationLines[transIdx].trim()) {
+        transIdx++
+      }
+      if (transIdx < translationLines.length) {
+        merged.push(`${orig.timeStr}${translationLines[transIdx]}`)
+        transIdx++
+      }
+    })
+  }
+
+  return merged.join('\n')
+}
 
 export const FullscreenPlayer: React.FC = () => {
   const showFullscreenPlayer = useMusicStore(s => s.showFullscreenPlayer)
@@ -24,10 +95,81 @@ export const FullscreenPlayer: React.FC = () => {
   const showOriginal = useMusicStore(s => s.showOriginal)
   const showTranslation = useMusicStore(s => s.showTranslation)
   const setShowTranslation = useMusicStore(s => s.setShowTranslation)
+  const lyricsSource = useMusicStore(s => s.lyricsSource)
+  const lyricsOffset = useMusicStore(s => s.lyricsOffset)
+  const setLyricsOffset = useMusicStore(s => s.setLyricsOffset)
+  const forcePlain = useMusicStore(s => s.forcePlain)
+  const setForcePlain = useMusicStore(s => s.setForcePlain)
+  const fetchOnlineLyrics = useMusicStore(s => s.fetchOnlineLyrics)
+  const fetchLyrics = useMusicStore(s => s.fetchLyrics)
+  const rawLyricsResult = useMusicStore(s => s.rawLyricsResult)
 
   const [showLyrics, setShowLyrics] = useState(true)
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement)
+  const [showMenu, setShowMenu] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isTranslationOpen, setIsTranslationOpen] = useState(false)
+  const [translationText, setTranslationText] = useState('')
+  const [rawText, setRawText] = useState('')
+  const [editorTab, setEditorTab] = useState<'raw' | 'merge'>('raw')
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !playingSong) return
+
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      const text = event.target?.result as string
+      if (!text) return
+      try {
+        await useMusicStore.getState().saveCustomLyrics(playingSong, text)
+      } catch (err) {
+        console.error('[FullscreenPlayer] Failed to import lyrics:', err)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  const handleSaveTranslation = async () => {
+    if (!playingSong) return
+
+    let textToSave = rawText
+    if (editorTab === 'merge' && translationText.trim()) {
+      if (rawText) {
+        textToSave = mergeTranslatedLyrics(rawText, translationText)
+      } else {
+        textToSave = translationText
+      }
+    }
+
+    if (!textToSave.trim()) return
+
+    try {
+      await useMusicStore.getState().packLyrics(playingSong, textToSave, 'Local')
+      setIsTranslationOpen(false)
+      setTranslationText('')
+      setRawText('')
+    } catch (err) {
+      console.error('[FullscreenPlayer] Failed to save and pack lyrics:', err)
+    }
+  }
+
+  const handleMergeTranslation = () => {
+    if (!rawText || !translationText) return
+    const merged = mergeTranslatedLyrics(rawText, translationText)
+    setRawText(merged)
+    setEditorTab('raw')
+  }
+
+  // Reset search panel when song changes
+  useEffect(() => {
+    setIsSearchOpen(false)
+    setShowMenu(false)
+  }, [playingSong])
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -133,6 +275,14 @@ export const FullscreenPlayer: React.FC = () => {
         }
       `}</style>
 
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept=".lrc,.ttml"
+        onChange={handleImportFile}
+      />
+
       {/* Background: unified blurred artwork/gradient + grain overlay */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {!artworkUrl ? (
@@ -190,6 +340,197 @@ export const FullscreenPlayer: React.FC = () => {
 
         {/* Right corner: Fullscreen toggle and Close button */}
         <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Three-dot menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                showMenu ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/10 hover:text-white'
+              }`}
+              title="Lyrics Options"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+            {showMenu && (
+              <>
+                <div className="fixed inset-0 z-50 cursor-default" onClick={() => setShowMenu(false)} />
+                <div className="absolute right-0 mt-2 w-60 bg-[#1c1c1e]/98 border border-white/[0.08] rounded-xl shadow-2xl py-1.5 text-left text-zinc-200 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 select-none text-[13px] font-normal z-[60]">
+                  {lyricsSource && (
+                    <>
+                      <div className="flex items-center justify-between text-[11px] font-bold text-zinc-500 uppercase tracking-wider px-3.5 py-1 select-none">
+                        <span>Source: {lyricsSource}</span>
+                      </div>
+                      <div className="h-[1px] bg-white/[0.08] my-1" />
+                    </>
+                  )}
+
+                  {lyricsSource === 'Local' && (
+                    <button
+                      onClick={() => {
+                        fetchOnlineLyrics(playingSong)
+                        setShowMenu(false)
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Search LRCLIB
+                    </button>
+                  )}
+                  {lyricsSource === 'LRCLIB' && (
+                    <button
+                      onClick={() => {
+                        fetchLyrics(playingSong)
+                        setShowMenu(false)
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Load Local
+                    </button>
+                  )}
+
+                  {/* Search online manually */}
+                  <button
+                    onClick={() => {
+                      setIsSearchOpen(true)
+                      setShowMenu(false)
+                    }}
+                    className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    Search Online Lyrics...
+                  </button>
+
+                  {/* Import Local File */}
+                  <button
+                    onClick={() => {
+                      fileInputRef.current?.click()
+                      setShowMenu(false)
+                    }}
+                    className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    Import LRC/TTML File...
+                  </button>
+
+                  {/* Pack / Repack Lyrics */}
+                  {(lyrics.length > 0 || !!rawLyricsResult?.raw) && (
+                    <button
+                      onClick={() => {
+                        const raw = rawLyricsResult?.raw || ''
+                        if (raw && playingSong) {
+                          useMusicStore.getState().packLyrics(playingSong, raw, lyricsSource || 'Local')
+                        }
+                        setShowMenu(false)
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      {lyricsSource === 'Local' ? 'Repack Lyrics (Replace)' : 'Pack to Song Folder'}
+                    </button>
+                  )}
+
+                  {/* Add Translation (only if original lyrics exist) */}
+                  {playingSong && !!rawLyricsResult?.raw && (
+                    <button
+                      onClick={() => {
+                        setRawText(rawLyricsResult?.raw || '')
+                        setTranslationText('')
+                        setEditorTab('merge')
+                        setIsTranslationOpen(true)
+                        setShowMenu(false)
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Add Translation...
+                    </button>
+                  )}
+
+                  {/* Edit Raw Lyrics (only if lyrics exist) */}
+                  {playingSong && !!rawLyricsResult?.raw && (
+                    <button
+                      onClick={() => {
+                        setRawText(rawLyricsResult?.raw || '')
+                        setTranslationText('')
+                        setEditorTab('raw')
+                        setIsTranslationOpen(true)
+                        setShowMenu(false)
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Edit Raw Lyrics...
+                    </button>
+                  )}
+
+                  {/* Add Lyrics (only if no lyrics exist at all) */}
+                  {playingSong && !rawLyricsResult?.raw && (
+                    <button
+                      onClick={() => {
+                        setRawText('')
+                        setTranslationText('')
+                        setEditorTab('raw')
+                        setIsTranslationOpen(true)
+                        setShowMenu(false)
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Add Lyrics...
+                    </button>
+                  )}
+
+                  {/* Format switcher */}
+                  {(lyrics.length > 0 || !!rawLyricsResult?.raw) && (
+                    <>
+                      <div className="h-[1px] bg-white/[0.08] my-1" />
+                      <button
+                        onClick={() => {
+                          setForcePlain(!forcePlain)
+                          setShowMenu(false)
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                      >
+                        <span>Format</span>
+                        <span className="text-[11px] text-zinc-500">{forcePlain ? "Plain Text" : "Synced (LRC)"}</span>
+                      </button>
+                    </>
+                  )}
+
+                  {/* Sync Offset Controls */}
+                  {(lyrics.length > 0 || !!rawLyricsResult?.raw) && !forcePlain && (
+                    <>
+                      <div className="h-[1px] bg-white/[0.08] my-1" />
+                      <div className="flex flex-col gap-1.5 px-3.5 py-1.5">
+                        <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider select-none">Offset Adjustment</span>
+                        <div className="flex items-center justify-between gap-2 bg-white/5 border border-white/[0.08] rounded-lg p-1">
+                          <button
+                            onClick={() => setLyricsOffset(lyricsOffset - 0.5)}
+                            className="w-10 h-7 flex items-center justify-center rounded hover:bg-white/10 text-white cursor-pointer font-bold text-xs"
+                            title="Delay lyrics (-0.5s)"
+                          >
+                            -0.5s
+                          </button>
+                          <span className="text-xs font-mono font-medium text-white/80 select-none">
+                            {lyricsOffset >= 0 ? `+${lyricsOffset.toFixed(1)}s` : `${lyricsOffset.toFixed(1)}s`}
+                          </span>
+                          <button
+                            onClick={() => setLyricsOffset(lyricsOffset + 0.5)}
+                            className="w-10 h-7 flex items-center justify-center rounded hover:bg-white/10 text-white cursor-pointer font-bold text-xs"
+                            title="Advance lyrics (+0.5s)"
+                          >
+                            +0.5s
+                          </button>
+                        </div>
+                        {lyricsOffset !== 0 && (
+                          <button
+                            onClick={() => setLyricsOffset(0)}
+                            className="text-[11px] text-center text-[#fa586a] hover:underline cursor-pointer py-0.5 font-semibold"
+                          >
+                            Reset Offset
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
           <button
             onClick={toggleFullscreen}
             className="w-10 h-10 flex items-center justify-center rounded-lg transition-all text-white/40 hover:bg-white/10 hover:text-white cursor-pointer"
@@ -340,22 +681,116 @@ export const FullscreenPlayer: React.FC = () => {
         >
           {/* Wrapper adds right padding matching the left column's px-8 lg:px-12 */}
           <div className="w-full h-full pr-8 lg:pr-12">
-            <SyncedLyrics
-              lyrics={lyrics}
-              currentTime={currentTime}
-              isPlaying={isPlaying}
-              showOriginal={showOriginal}
-              showTranslation={showTranslation}
-              showLyrics={showLyrics}
-              activeTrack={activeTrack}
-              compact={false}
-              noHorizontalShift={true}
-              onSeek={seekSong}
-            />
+            {isSearchOpen ? (
+              <LyricsSearchPanel
+                song={playingSong}
+                onClose={() => setIsSearchOpen(false)}
+              />
+            ) : (
+              <SyncedLyrics
+                lyrics={lyrics}
+                currentTime={currentTime}
+                isPlaying={isPlaying}
+                showOriginal={showOriginal}
+                showTranslation={showTranslation}
+                showLyrics={showLyrics}
+                activeTrack={activeTrack}
+                compact={false}
+                noHorizontalShift={true}
+                onSeek={seekSong}
+              />
+            )}
           </div>
         </motion.div>
 
       </div>
+
+      {/* Translation & Lyrics Editor Modal Overlay */}
+      {isTranslationOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm select-none">
+          <div className="relative w-full max-w-[520px] bg-[#1c1c1e] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-white">
+            <h2 className="text-[17px] font-bold text-center tracking-tight">Edit & Translate Lyrics</h2>
+            
+            {/* Tabs Header */}
+            <div className="flex bg-[#2c2c2e] p-0.5 rounded-lg border border-white/5">
+              <button
+                onClick={() => setEditorTab('raw')}
+                className={`flex-1 py-1.5 text-[12px] font-medium rounded-md transition-all cursor-pointer ${
+                  editorTab === 'raw' ? 'bg-[#3a3a3c] text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Raw Editor
+              </button>
+              <button
+                onClick={() => setEditorTab('merge')}
+                className={`flex-1 py-1.5 text-[12px] font-medium rounded-md transition-all cursor-pointer ${
+                  editorTab === 'merge' ? 'bg-[#3a3a3c] text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Auto-Merge Translation
+              </button>
+            </div>
+
+            {editorTab === 'raw' ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-[11px] text-zinc-400 leading-normal">
+                  Directly edit the lyric text. For translations, place matching timestamps consecutively:
+                  <br />
+                  <code className="text-[#fa586a] font-mono">[00:12.30]Original Line</code>
+                  <br />
+                  <code className="text-[#fa586a] font-mono">[00:12.30]Translation Line</code>
+                </p>
+                <textarea
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  placeholder="[00:00.00]Lyrics go here..."
+                  rows={12}
+                  className="w-full p-3 rounded-lg bg-[#2c2c2e] text-white text-[13px] placeholder-zinc-500 border border-white/5 focus:outline-none focus:border-[#fa586a]/40 focus:bg-[#3a3a3c] resize-none transition-all font-mono"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-[11px] text-zinc-400 leading-normal">
+                  Paste only the translation lines here. We will match them one-by-one with the original timestamps, then copy the result back to your Raw Editor.
+                </p>
+                <textarea
+                  value={translationText}
+                  onChange={(e) => setTranslationText(e.target.value)}
+                  placeholder="Paste translation lines here..."
+                  rows={10}
+                  className="w-full p-3 rounded-lg bg-[#2c2c2e] text-white text-[13px] placeholder-zinc-500 border border-white/5 focus:outline-none focus:border-[#fa586a]/40 focus:bg-[#3a3a3c] resize-none transition-all font-mono"
+                />
+                <button
+                  onClick={handleMergeTranslation}
+                  disabled={!translationText.trim()}
+                  className="w-full h-8 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-50 text-[12px] font-medium transition-all cursor-pointer mt-1"
+                >
+                  Merge into Raw Editor
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 mt-2">
+              <button
+                onClick={handleSaveTranslation}
+                className="flex-1 h-9 rounded-lg bg-[#fa586a] hover:bg-[#fa586a]/90 active:scale-[0.98] text-white text-[13px] font-medium transition-all cursor-pointer"
+              >
+                Save & Repack
+              </button>
+              <button
+                onClick={() => {
+                  setIsTranslationOpen(false)
+                  setTranslationText('')
+                  setRawText('')
+                }}
+                className="flex-1 h-9 rounded-lg bg-[#2c2c2e] hover:bg-[#3a3a3c] active:scale-[0.98] text-zinc-400 hover:text-white text-[13px] font-medium border border-white/5 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   )

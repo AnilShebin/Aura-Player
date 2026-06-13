@@ -97,7 +97,7 @@ func main() {
 			application.NewService(settingsService),
 			application.NewService(libraryService),
 			application.NewService(playbackService),
-			application.NewService(lyrics.NewLyricsService()),
+			application.NewService(lyrics.NewLyricsService(settingsService.GetDB())),
 			application.NewService(updater.NewUpdaterService()),
 		},
 		Assets: application.AssetOptions{

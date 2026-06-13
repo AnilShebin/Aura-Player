@@ -40,6 +40,15 @@ interface MusicState {
   showTranslation: boolean
   lyrics: any[]
   rawLyricsResult: LyricsService.LyricsResult | null
+  lyricsOffset: number
+  setLyricsOffset: (offset: number) => void
+  lyricsSource: string | null
+  fetchOnlineLyrics: (song: Song) => void
+  lyricsLoading: boolean
+  saveCustomLyrics: (song: Song, text: string) => Promise<void>
+  packLyrics: (song: Song, text: string, source?: string) => Promise<void>
+  forcePlain: boolean
+  setForcePlain: (force: boolean) => void
   volume: number
   isShuffle: boolean
   repeatMode: 'off' | 'all' | 'one'
@@ -131,6 +140,12 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   showTranslation: false,
   lyrics: [],
   rawLyricsResult: null,
+  lyricsOffset: 0,
+  setLyricsOffset: (offset) => set({ lyricsOffset: offset }),
+  lyricsSource: null,
+  lyricsLoading: false,
+  forcePlain: false,
+  setForcePlain: (force) => set({ forcePlain: force }),
   volume: 0.8,
   isShuffle: false,
   repeatMode: 'off',
@@ -333,7 +348,10 @@ export const useMusicStore = create<MusicState>((set, get) => ({
       isPlaying: true,
       currentTime: 0,
       lyrics: [],
-      rawLyricsResult: null
+      rawLyricsResult: null,
+      lyricsOffset: 0,
+      lyricsSource: null,
+      lyricsLoading: false
     })
 
     // Fetch lyrics asynchronously after state update
@@ -414,7 +432,10 @@ export const useMusicStore = create<MusicState>((set, get) => ({
       currentTime: 0,
       isPlaying: true,
       lyrics: [],
-      rawLyricsResult: null
+      rawLyricsResult: null,
+      lyricsOffset: 0,
+      lyricsSource: null,
+      lyricsLoading: false
     })
     if (nextSong) get().fetchLyrics(nextSong)
   },
@@ -448,27 +469,102 @@ export const useMusicStore = create<MusicState>((set, get) => ({
       currentTime: 0,
       isPlaying: true,
       lyrics: [],
-      rawLyricsResult: null
+      rawLyricsResult: null,
+      lyricsOffset: 0,
+      lyricsSource: null,
+      lyricsLoading: false
     })
     if (prevSong) get().fetchLyrics(prevSong)
   },
   fetchLyrics: (song) => {
     if (!song?.filePath) return
+    set({ lyricsLoading: true })
     LyricsService.GetLyrics(song.filePath)
       .then((result) => {
         // Only apply if this song is still the playing song
         const current = get().playingSong
         if (current?.filePath === song.filePath) {
+          const hasTranslation = result?.lines?.some(l => l.is_translation)
           set({
             lyrics: result?.lines || [],
-            rawLyricsResult: result
+            rawLyricsResult: result,
+            lyricsSource: result?.source || null,
+            lyricsLoading: false,
+            showTranslation: hasTranslation ? true : get().showTranslation
           })
         }
       })
       .catch((err) => {
         console.error('[LyricsService] Failed to fetch lyrics:', err)
-        set({ lyrics: [], rawLyricsResult: null })
+        set({ lyrics: [], rawLyricsResult: null, lyricsSource: null, lyricsLoading: false })
       })
+  },
+  fetchOnlineLyrics: (song) => {
+    if (!song?.filePath) return
+    set({ lyrics: [], rawLyricsResult: null, lyricsSource: 'LRCLIB', lyricsLoading: true })
+    LyricsService.GetOnlineLyrics(song.filePath)
+      .then((result) => {
+        const current = get().playingSong
+        if (current?.filePath === song.filePath) {
+          const hasTranslation = result?.lines?.some(l => l.is_translation)
+          set({
+            lyrics: result?.lines || [],
+            rawLyricsResult: result,
+            lyricsSource: result?.source || 'LRCLIB',
+            lyricsLoading: false,
+            showTranslation: hasTranslation ? true : get().showTranslation
+          })
+        }
+      })
+      .catch((err) => {
+        console.error('[LyricsService] Failed to fetch online lyrics:', err)
+        set({ lyrics: [], rawLyricsResult: null, lyricsSource: null, lyricsLoading: false })
+      })
+  },
+  saveCustomLyrics: async (song, text) => {
+    if (!song?.filePath) return
+    set({ lyricsLoading: true })
+    try {
+      const result = await LyricsService.SaveCustomLyrics(song.filePath, text)
+      const current = get().playingSong
+      if (current?.filePath === song.filePath) {
+        const hasTranslation = result?.lines?.some(l => l.is_translation)
+        set({
+          lyrics: result?.lines || [],
+          rawLyricsResult: result,
+          lyricsSource: result?.source || 'LRCLIB',
+          lyricsLoading: false,
+          showTranslation: hasTranslation ? true : get().showTranslation
+        })
+      }
+    } catch (err) {
+      console.error('[LyricsService] Failed to save custom lyrics:', err)
+      set({ lyricsLoading: false })
+    }
+  },
+  packLyrics: async (song, text, source) => {
+    if (!song?.filePath) return
+    set({ lyricsLoading: true })
+    try {
+      const targetSource = source || 'Local'
+      const result = await LyricsService.PackLyrics(song.filePath, text, targetSource)
+      const current = get().playingSong
+      if (current?.filePath === song.filePath) {
+        const hasTranslation = result?.lines?.some(l => l.is_translation)
+        set({
+          lyrics: result?.lines || [],
+          rawLyricsResult: result,
+          lyricsSource: result?.source || targetSource,
+          lyricsLoading: false,
+          showTranslation: hasTranslation ? true : get().showTranslation
+        })
+      }
+      get().triggerToast('Song lyrics successfully packed locally!', 'success')
+    } catch (err) {
+      console.error('[LyricsService] Failed to pack lyrics:', err)
+      get().triggerToast('Failed to pack lyrics locally', 'error')
+      set({ lyricsLoading: false })
+    }
   },
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   clearPlayQueue: () => {
